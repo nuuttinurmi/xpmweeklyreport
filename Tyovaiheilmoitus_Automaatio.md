@@ -18,6 +18,29 @@ Lopputuloksena työvaiheilmoitus **generoidaan**, sitä ei kirjoiteta käsin.
 xPM:n `pum_initiative` ja Dynamicsin `ecr_projectportfolio2` yhdistetään **projektinumeron** kautta (tekstikenttä, ei suora lookup).
 Tämä on koko raportin perusavain, jolla haetaan data molemmista järjestelmistä.
 
+### Projektimalli: Large vs Small
+
+xPM:ssä on kaksi projektityyppiä, jotka vaikuttavat raportin sisältöön:
+
+| Projektityyppi | Käytettävissä olevat moduulit |
+|---|---|
+| **Large Initiative** | Kaikki: Details, Timeline, Board, Financials, Risks, Stakeholders, KPI Status, Changes, Dependencies, Documents, Dashboard |
+| **Small Initiative** | Vain ydin: Details, Timeline, Board, KPI Status, Documents |
+
+**Vaikutus raporttiin:** Small-projektissa ei ole Risks- eikä Changes-moduulia, joten nämä osiot jätetään pois raportista. Projektityyppi tarkistetaan `pum_initiative`-taulusta raportin generoinnissa.
+
+| Raportin osio | Large | Small |
+|---|---|---|
+| Otsikkotiedot | ✅ | ✅ |
+| Vahvuus (roolit) | ✅ | ✅ |
+| Tehtävät + valmiusaste | ✅ | ✅ |
+| 3 vk aikataulu | ✅ | ✅ |
+| Action items (käsin) | ✅ | ✅ |
+| Muutokset | ✅ | ❌ |
+| Riskit | ✅ | ❌ |
+| Työturvallisuus | ✅ | ✅ |
+| Tilannekuva | ✅ | ✅ |
+
 ---
 
 ### 1.1 Otsikkotiedot (100 % automaattiset)
@@ -81,7 +104,6 @@ pum_initiative (projekti)
 | Tehtävä | `pum_gantttask.pum_name` | |
 | Alue | Johdetaan `pum_gantttask.pum_name` tai WBS-hierarkiasta | Alue sisältyy tehtävän nimeen (esim. "Kerros 3 > Asennus") |
 | Valmiusaste (%) | Laskettu: `Actual work / Work × 100` | Tai oma %-kenttä jos olemassa |
-| Huomioitavaa | PM kirjoittaa käsin raporttiriville | Vapaa teksti |
 
 **Rivityypin erottelu:**
 Ei erotella ProjectSituation / SiteSituation -osioihin. Kaikki tehtävät esitetään yhdessä listassa.
@@ -114,12 +136,10 @@ Jaetaan kahteen osaan:
 | Osa-alue | Lähde | Taulu / kenttä | Tila |
 |---|---|---|---|
 | Muilta osapuolilta vaaditut toimenpiteet | Käsin | PM kirjoittaa vapaa tekstinä raporttiin | OK |
-| Muutokset | xPM | `pum_changerequest` — projektin muutospyynnöt, tila ja kuvaus | OK |
+| Muutokset | xPM | `pum_changerequest` — projektin muutospyynnöt, tila ja kuvaus | OK — **vain Large** |
 | Työturvallisuus | Vakioteksti + käsin | Oletusteksti (esim. "Ei poikkeamia"), PM lisää poikkeukset tarvittaessa | OK |
-| Riskit | xPM | `pum_risk` — Impact (1–5), Probability (0–100 %), nimi, kuvaus. Filtteri: projektin aktiiviset riskit | OK |
-
-**Vapaa teksti:**
-- Lyhyt tilannekuva (optionaalisesti Loop-linkki)
+| Riskit | xPM | `pum_risk` — Impact (1–5), Probability (0–100 %), nimi, kuvaus. Filtteri: projektin aktiiviset riskit | OK — **vain Large** |
+| Tilannekuva + liikennevalo | xPM | KPI Status: Overall (Not Set / Need Help / At Risk / All Good) + Comments (vapaa teksti) | OK — Large & Small |
 
 ---
 
@@ -138,6 +158,7 @@ Resursointi, aikataulut ja tehtävät tulevat xPM:stä.
 | `pum_role` | Resurssin rooli | 18 roolia, mm. AV Installer, AV Project Manager, AV Consultant |
 | `pum_tasklink` | Tehtäväriippuvuudet | Predecessor/Successor |
 | `pum_calendar` | Kalenterit | Default Daily Capacity, kansalliset pyhät |
+| KPI Status (pum_initiative tai erillinen entiteetti) | Projektin tilannepäivitys | Overall (Not Set / Need Help / At Risk / All Good), Comments (vapaa teksti). Historia säilyy. |
 
 **xPM-hierarkia:**
 ```
@@ -178,26 +199,18 @@ Uusiin tauluihin tallennetaan **vain PM:n viikkokohtaiset käsin kirjoittamat ti
 | Status | Choice | Luonnos / Valmis / Lähetetty |
 | ActionItems | Multiline text | PM: muilta osapuolilta vaaditut toimenpiteet |
 | SafetyNotes | Multiline text | PM: vakioteksti + poikkeukset |
-| SituationSummary | Multiline text | PM: vapaa tilannekuva |
 | AdditionalInfo | Text | PM: harvoin tarvittu |
 | OutputFileUrl | URL | SharePoint PDF-linkki (täyttyy generoinnissa) |
-
-**`aud_weeklyreporttasknote` (1:N alirivit — tehtäväkohtaiset kommentit)**
-
-| Kenttä | Tyyppi | Huomio |
-|---|---|---|
-| WeeklyReport | Lookup → `aud_weeklyreport` | |
-| GanttTask | Lookup → `pum_gantttask` | Mihin tehtävään kommentti liittyy |
-| Notes | Multiline text | PM: "Huomioitavaa"-sarake tälle tehtävälle tällä viikolla |
 
 **Miksi tämä riittää:**
 - Otsikkotiedot → haetaan lennossa `ecr_projectportfolio2` → `account` / `contact`
 - Vahvuus → haetaan lennossa `pum_gantttask` → `pum_assignment` → `pum_resource` → `pum_role`
 - Tehtävät + valmiusaste → haetaan lennossa `pum_gantttask` (Work / Actual work)
 - 3 vk aikataulu → haetaan lennossa `pum_gantttask` (pum_startdate / pum_enddate)
-- Muutokset → haetaan lennossa `pum_changerequest`
-- Riskit → haetaan lennossa `pum_risk`
-- PM:n kommentit → `aud_weeklyreport` + `aud_weeklyreporttasknote`
+- Muutokset → haetaan lennossa `pum_changerequest` (vain Large)
+- Riskit → haetaan lennossa `pum_risk` (vain Large)
+- Tilannekuva + liikennevalo → haetaan lennossa xPM KPI Status (Overall + Comments)
+- PM:n kommentit → `aud_weeklyreport` (ActionItems, SafetyNotes)
 
 ---
 
@@ -209,9 +222,10 @@ xPM:n `pum_initiative` -lomakkeelle lisätään uusi välilehti **Weekly Reports
 - Vko | Vuosi | Status | Luotu | PDF-linkki
 
 PM klikkaa rivin auki → `aud_weeklyreport`-lomake avautuu:
-- **PM:n syöttökentät:** Action items, Työturvallisuus, Tilannekuva
-- **Tehtäväkommentit (subgrid):** `aud_weeklyreporttasknote` — PM kirjoittaa "Huomioitavaa" per tehtävä
+- **PM:n syöttökentät:** Action items, Työturvallisuus
 - **Generoi PDF -painike:** Laukaisee Power Automate -flown joka hakee kaiken automaattisen datan lennossa
+
+**Huom:** Tilannekuva haetaan automaattisesti xPM:n KPI Statusista — PM päivittää sen normaalisti KPI Status -välilehdellä, ei viikkoraporttilomakkeella.
 
 ---
 
@@ -220,28 +234,30 @@ PM klikkaa rivin auki → `aud_weeklyreport`-lomake avautuu:
 ```
 Viikoittainen sykli:
 
-1. PM painaa "New Report" (tai Power Automate ajastettuna)
+1. PM päivittää KPI Statusin xPM:ssä (Overall + Comments)
    │
-   ├─ Luo aud_weeklyreport-tietue (viikko, vuosi, initiative-linkki)
-   └─ Luo aud_weeklyreporttasknote-rivit per aktiivinen pum_gantttask
-      (valmiit rivit joihin PM voi kirjoittaa "Huomioitavaa")
+   └─ Tämä on normaali xPM-työnkulku, ei lisätyötä
 
-2. PM avaa raportin Weekly Reports -välilehdeltä
+2. PM painaa "New Report" (tai Power Automate ajastettuna)
    │
-   ├─ Täyttää: Huomioitavaa (per tehtävärivi)
-   ├─ Täyttää: Action items, Työturvallisuus, Tilannekuva
+   └─ Luo aud_weeklyreport-tietue (viikko, vuosi, initiative-linkki)
+
+3. PM avaa raportin Weekly Reports -välilehdeltä
+   │
+   ├─ Täyttää: Action items, Työturvallisuus
    └─ Tallentaa
 
-3. PM painaa "Generoi PDF"
+4. PM painaa "Generoi PDF"
    │
    ├─ Power Automate hakee LENNOSSA:
    │   ├─ Otsikkotiedot: ecr_projectportfolio2 → account, contact
    │   ├─ Vahvuus: pum_gantttask → pum_assignment → pum_resource → pum_role
    │   ├─ Tehtävät + valmiusaste: pum_gantttask
    │   ├─ 3 vk aikataulu: pum_gantttask (start/end)
-   │   ├─ Muutokset: pum_changerequest
-   │   ├─ Riskit: pum_risk
-   │   └─ PM:n kommentit: aud_weeklyreport + aud_weeklyreporttasknote
+   │   ├─ Muutokset: pum_changerequest (vain Large)
+   │   ├─ Riskit: pum_risk (vain Large)
+   │   ├─ Tilannekuva + liikennevalo: xPM KPI Status (Overall + Comments)
+   │   └─ PM:n kommentit: aud_weeklyreport (ActionItems, SafetyNotes)
    │
    ├─ Yhdistää datan → generoi PDF
    ├─ Tallentaa PDF:n projektin SharePoint-kirjastoon
@@ -280,8 +296,9 @@ PDF/portaalinäkymä toimii vain **esitysmuotona**, Dataverse on tiedon lähde.
 | Vahvuus (roolittain) | xPM | `pum_gantttask` → `pum_assignment` → `pum_resource` → `pum_role` |
 | Tehtävät ja valmiusaste | xPM | `pum_gantttask` (Work / Actual work) |
 | 3 viikon aikataulu | xPM | `pum_gantttask` (pum_startdate / pum_enddate) |
-| Muutokset | xPM | `pum_changerequest` (projektin muutospyynnöt) |
-| Riskit | xPM | `pum_risk` (Impact, Probability, nimi, kuvaus) |
+| Muutokset | xPM | `pum_changerequest` (projektin muutospyynnöt) — **vain Large** |
+| Riskit | xPM | `pum_risk` (Impact, Probability, nimi, kuvaus) — **vain Large** |
+| Tilannekuva + liikennevalo | xPM | KPI Status (Overall + Comments) |
 
 ### Keltainen — vaatii selvitystä tai konfigurointia
 
@@ -298,5 +315,5 @@ PDF/portaalinäkymä toimii vain **esitysmuotona**, Dataverse on tiedon lähde.
 | Asia | Ratkaisu |
 |---|---|
 | ~~Työturvallisuus-osio~~ | ~~Ratkaistu: vakioteksti + PM kirjoittaa poikkeukset~~ |
-| ~~Huomioitavaa-kenttä tehtävätasolla~~ | ~~Ratkaistu: PM kirjoittaa vapaa tekstinä raporttiriville~~ |
+| ~~Tilannekuva~~ | ~~Ratkaistu: haetaan xPM:n KPI Statusista (Overall + Comments)~~ |
 | ~~xPM ↔ Dynamics -linkki~~ | ~~Ratkaistu: yhdistetään projektinumeron perusteella (ei suoraa lookuppia)~~ |

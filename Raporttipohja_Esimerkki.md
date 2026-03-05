@@ -38,19 +38,18 @@
 
 ## Projektitilanne
 
-| Tehtävä | Alue | Valmiusaste | Huomioitavaa |
-|---|---|---|---|
-| Järjestelmäsuunnittelu | Konserttisali | 100 % | Valmis |
-| Kaapelointi | Konserttisali | 85 % | Muutama veto jäljellä |
-| Laitteiden asennus | Konserttisali | 40 % | Odottaa kaiutintoimitusta |
-| Järjestelmäsuunnittelu | Harjoitussali A | 90 % | Tarkistus kesken |
-| Kaapelointi | Harjoitussali A | 20 % | Aloitettu vk 9 |
-| Ohjelmointi | — | 0 % | Alkaa vk 12 |
-| Käyttöönotto | — | 0 % | Alkaa vk 14 |
+| Tehtävä | Alue | Valmiusaste |
+|---|---|---|
+| Järjestelmäsuunnittelu | Konserttisali | 100 % |
+| Kaapelointi | Konserttisali | 85 % |
+| Laitteiden asennus | Konserttisali | 40 % |
+| Järjestelmäsuunnittelu | Harjoitussali A | 90 % |
+| Kaapelointi | Harjoitussali A | 20 % |
+| Ohjelmointi | — | 0 % |
+| Käyttöönotto | — | 0 % |
 
 > **Datalähde:** xPM `pum_gantttask` (pum_name, Work, Actual work). Automaattinen.
 > Alue johdetaan tehtävänimestä / WBS-hierarkiasta.
-> "Huomioitavaa" = PM kirjoittaa käsin.
 
 ---
 
@@ -79,23 +78,23 @@
 
 ---
 
-### Muutokset
+### Muutokset *(vain Large Initiative)*
 | Muutos | Tila | Huomio |
 |---|---|---|
 | Konserttisalin kaiutinsijoittelu muutettu | Hyväksytty | Vaikuttaa kaapelointiin |
 | Harjoitussali A lisänäyttö | Odottaa hyväksyntää | Asiakkaan pyyntö vk 9 |
 
-> **Datalähde:** xPM `pum_changerequest` (projektin muutospyynnöt). Automaattinen.
+> **Datalähde:** xPM `pum_changerequest` (projektin muutospyynnöt). Automaattinen. Osio ei näy Small Initiative -projekteissa.
 
 ---
 
-### Riskit
+### Riskit *(vain Large Initiative)*
 | Riski | Vaikutus | Todennäköisyys |
 |---|---|---|
 | Kaiutintoimitus myöhästyy → asennusaikataulu siirtyy | 4/5 | 60 % |
 | Harjoitussali A:n lattiaremontti viivästyttää kaapelointia | 3/5 | 30 % |
 
-> **Datalähde:** xPM `pum_risk` (Impact, Probability). Automaattinen.
+> **Datalähde:** xPM `pum_risk` (Impact, Probability). Automaattinen. Osio ei näy Small Initiative -projekteissa.
 
 ---
 
@@ -107,11 +106,13 @@ Ei poikkeamia.
 
 ---
 
-### Vapaa teksti / tilannekuva
+### Tilannekuva
+
+**Status: All Good** ✅
 
 Projekti etenee aikataulussa. Konserttisalin kaapelointi valmistuu viikolla 11, minkä jälkeen aloitetaan laitteiden asennus. Kriittinen riski on kaiutintoimitus — jos myöhästyy, vaikuttaa suoraan asennusaikatauluun. Harjoitussali A:n työt käynnistyneet suunnitellusti.
 
-> PM kirjoittaa käsin (tai Loop-linkki).
+> **Datalähde:** xPM KPI Status (Overall + Comments). Automaattinen — PM päivittää xPM:n KPI Status -välilehdellä.
 
 ---
 
@@ -121,10 +122,10 @@ Projekti etenee aikataulussa. Konserttisalin kaapelointi valmistuu viikolla 11, 
 |---|---|---|
 | Otsikkotiedot | ✅ | Lisätietoja (harvoin) |
 | Vahvuus | ✅ | — |
-| Projektitilanne | ✅ Tehtävä, alue, valmiusaste | Huomioitavaa |
+| Projektitilanne | ✅ Tehtävä, alue, valmiusaste | — |
 | 3 vk aikataulu | ✅ | — |
 | Action items | — | ✅ |
-| Muutokset | ✅ | — |
-| Riskit | ✅ | — |
+| Muutokset | ✅ (vain Large) | — |
+| Riskit | ✅ (vain Large) | — |
 | Työturvallisuus | ✅ Vakioteksti | Poikkeukset |
-| Tilannekuva | — | ✅ |
+| Tilannekuva + liikennevalo | ✅ (xPM KPI Status) | — |
