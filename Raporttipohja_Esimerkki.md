@@ -15,9 +15,10 @@
 | **Asiakkaan yhteyshenkilö** | Anna Korhonen |
 | **Viikko** | Vko 10 / 2026 |
 | **Urakka** | Fixed Price |
-| **Lisätietoja** | — |
+| **Vaihe** | 3. Execute |
+| **Aikataulun edistyminen** | 42 % |
 
-> **Datalähde:** Dynamics `ecr_projectportfolio2` → `account` → `contact`. Automaattinen.
+> **Datalähde:** Dynamics `ecr_projectportfolio2` → `account` → `contact` + xPM `pum_statusreporting`. Automaattinen.
 
 ---
 
@@ -68,64 +69,64 @@
 
 ---
 
-## Muuta
+## KPI Status
 
-### Muilta osapuolilta vaaditut toimenpiteet
-- Asiakas: Toimittaa lopulliset huoneen mitat Harjoitussali B:lle (DL vk 11)
-- Sähköurakoitsija: Vetää lisäsyötöt valvomoon (sovittu vk 11)
+| Dimensio | Nykytila | Ehdotus | Kommentti |
+|---|---|---|---|
+| Resources | No Issue | No Issue | |
+| Summary | No Issue | No Issue | |
+| Quality | No Issue | No Issue | |
+| Cost | No Issue | At Risk | Materiaalikustannukset ylittymässä 5 % |
+| Scope | No Issue | No Issue | |
+| Schedule | No Issue | No Issue | |
 
-> PM kirjoittaa käsin.
+> **Datalähde:** xPM `pum_statusreporting` (pum_kpicurrent* / pum_kpinew* / pum_kpinew*comment). PM muokkaa ehdotus-saraketta ja kommentteja.
 
 ---
 
-### Muutokset *(vain Large Initiative)*
+## Tilannekuva
+
+Projekti etenee aikataulussa. Konserttisalin kaapelointi valmistuu viikolla 11, minkä jälkeen aloitetaan laitteiden asennus. Kriittinen riski on kaiutintoimitus — jos myöhästyy, vaikuttaa suoraan asennusaikatauluun. Harjoitussali A:n työt käynnistyneet suunnitellusti.
+
+Asiakkaalta tarvitaan lopulliset huoneen mitat Harjoitussali B:lle (DL vk 11). Sähköurakoitsija vetää lisäsyötöt valvomoon viikolla 11.
+
+> **Datalähde:** xPM `pum_statusreporting.pum_comment`. PM kirjoittaa vapaan tilannekuvan, joka kattaa myös action items ja muut huomiot.
+
+---
+
+## Muutokset *(vain Large Initiative)*
+
 | Muutos | Tila | Huomio |
 |---|---|---|
 | Konserttisalin kaiutinsijoittelu muutettu | Hyväksytty | Vaikuttaa kaapelointiin |
 | Harjoitussali A lisänäyttö | Odottaa hyväksyntää | Asiakkaan pyyntö vk 9 |
 
-> **Datalähde:** xPM `pum_changerequest` (projektin muutospyynnöt). Automaattinen. Osio ei näy Small Initiative -projekteissa.
+> **Datalähde:** xPM `pum_changerequest`. Automaattinen. Osio ei näy Small Initiative -projekteissa.
 
 ---
 
-### Riskit *(vain Large Initiative)*
+## Riskit *(vain Large Initiative, sis. työturvallisuus)*
+
 | Riski | Vaikutus | Todennäköisyys |
 |---|---|---|
 | Kaiutintoimitus myöhästyy → asennusaikataulu siirtyy | 4/5 | 60 % |
 | Harjoitussali A:n lattiaremontti viivästyttää kaapelointia | 3/5 | 30 % |
+| Työturvallisuus: putoamisvaara konserttisalin katon asennuksessa | 3/5 | 20 % |
 
 > **Datalähde:** xPM `pum_risk` (Impact, Probability). Automaattinen. Osio ei näy Small Initiative -projekteissa.
-
----
-
-### Työturvallisuus
-
-Ei poikkeamia.
-
-> Vakioteksti. PM lisää poikkeukset tarvittaessa.
-
----
-
-### Tilannekuva
-
-**Status: All Good** ✅
-
-Projekti etenee aikataulussa. Konserttisalin kaapelointi valmistuu viikolla 11, minkä jälkeen aloitetaan laitteiden asennus. Kriittinen riski on kaiutintoimitus — jos myöhästyy, vaikuttaa suoraan asennusaikatauluun. Harjoitussali A:n työt käynnistyneet suunnitellusti.
-
-> **Datalähde:** xPM KPI Status (Overall + Comments). Automaattinen — PM päivittää xPM:n KPI Status -välilehdellä.
+> Työturvallisuusriskit kirjataan normaaleina riskeinä xPM:ään.
 
 ---
 
 ## Datalähde-yhteenveto
 
-| Osio | Automaattinen | Käsin |
+| Osio | Automaattinen | PM:n syöte |
 |---|---|---|
-| Otsikkotiedot | ✅ | Lisätietoja (harvoin) |
+| Otsikkotiedot | ✅ | — |
 | Vahvuus | ✅ | — |
-| Projektitilanne | ✅ Tehtävä, alue, valmiusaste | — |
+| Projektitilanne | ✅ | — |
 | 3 vk aikataulu | ✅ | — |
-| Action items | — | ✅ |
+| KPI Status | ✅ (nykytila) | Ehdotukset + kommentit |
+| Tilannekuva | — | ✅ (`pum_comment`) |
 | Muutokset | ✅ (vain Large) | — |
-| Riskit | ✅ (vain Large) | — |
-| Työturvallisuus | ✅ Vakioteksti | Poikkeukset |
-| Tilannekuva + liikennevalo | ✅ (xPM KPI Status) | — |
+| Riskit + työturvallisuus | ✅ (vain Large) | — |
