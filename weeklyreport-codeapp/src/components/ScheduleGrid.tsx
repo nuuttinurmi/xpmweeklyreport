@@ -75,9 +75,6 @@ export function ScheduleGrid({ cells, columns }: Props) {
           </table>
         </div>
       )}
-      <p className="data-source-note">
-        Data source: xPM <code>pum_gantttask</code> (pum_startdate / pum_enddate). Automatic.
-      </p>
     </section>
   );
 }

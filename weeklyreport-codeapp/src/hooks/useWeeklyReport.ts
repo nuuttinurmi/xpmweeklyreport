@@ -6,20 +6,22 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type {
+  PumInitiative,
   PumStatusReporting,
   PumChangeRequest,
   PumRisk,
-  EcrProjectPortfolio2,
   StaffingRow,
   ScheduleCell,
 } from "../types/dataverse";
+import { PROJECT_TYPE_LARGE } from "../types/dataverse";
 import {
   fetchStatusReport,
   fetchGanttTasksWithStaffing,
   fetchAllGanttTasks,
+  fetchAssignmentsWithRoles,
   fetchChangeRequests,
   fetchRisks,
-  fetchProjectByNumber,
+  fetchInitiativeWithType,
   updateStatusReport,
 } from "../utils/dataverseClient";
 import { aggregateStaffing } from "../utils/staffingAggregator";
@@ -40,7 +42,7 @@ interface UseWeeklyReportResult {
 
   // Raw report data
   report: PumStatusReporting | null;
-  project: EcrProjectPortfolio2 | null;
+  initiative: PumInitiative | null;
 
   // Derived / composed data
   staffing: StaffingRow[];
@@ -48,6 +50,7 @@ interface UseWeeklyReportResult {
   scheduleColumns: ReturnType<typeof buildScheduleColumns>;
   changes: PumChangeRequest[];
   risks: PumRisk[];
+  isLargeProject: boolean;
 
   // Edit handlers
   updateField: (field: keyof PumStatusReporting, value: string | number) => void;
@@ -66,7 +69,7 @@ export function useWeeklyReport(
   const [dirty, setDirty] = useState(false);
 
   const [report, setReport] = useState<PumStatusReporting | null>(null);
-  const [project, setProject] = useState<EcrProjectPortfolio2 | null>(null);
+  const [initiative, setInitiative] = useState<PumInitiative | null>(null);
   const [staffing, setStaffing] = useState<StaffingRow[]>([]);
   const [scheduleCells, setScheduleCells] = useState<ScheduleCell[]>([]);
   const [scheduleColumns, setScheduleColumns] = useState<ReturnType<typeof buildScheduleColumns>>(
@@ -74,6 +77,7 @@ export function useWeeklyReport(
   );
   const [changes, setChanges] = useState<PumChangeRequest[]>([]);
   const [risks, setRisks] = useState<PumRisk[]>([]);
+  const [isLargeProject, setIsLargeProject] = useState(true);
 
   useEffect(() => {
     if (!reportId || !initiativeId) return;
@@ -85,10 +89,18 @@ export function useWeeklyReport(
     setLoading(true);
     setError(null);
     try {
-      // 1. Fetch the status report
-      const rep = await fetchStatusReport(reportId);
+      // 1. Fetch the status report + initiative (for project type + project number)
+      const [rep, ini] = await Promise.all([
+        fetchStatusReport(reportId),
+        fetchInitiativeWithType(initiativeId),
+      ]);
       if (!rep) throw new Error("Report not found");
       setReport(rep);
+      setInitiative(ini);
+
+      // Determine Large vs Small
+      const large = ini?.pum_projecttype === PROJECT_TYPE_LARGE;
+      setIsLargeProject(large);
 
       // 2. Derive week/year from statusdate
       const statusDate = rep.pum_statusdate
@@ -108,15 +120,18 @@ export function useWeeklyReport(
       setScheduleColumns(cols);
 
       // 3. Parallel fetches
-      const [staffingTasks, allTasks, crs, rsks] = await Promise.all([
+      const fetchPromises = [
         fetchGanttTasksWithStaffing(initiativeId, weekStart, weekEnd),
         fetchAllGanttTasks(initiativeId, gridStart, gridEnd),
-        fetchChangeRequests(initiativeId),
-        fetchRisks(initiativeId),
-      ]);
+        fetchAssignmentsWithRoles(initiativeId),
+        large ? fetchChangeRequests(initiativeId) : Promise.resolve([]),
+        large ? fetchRisks(initiativeId) : Promise.resolve([]),
+      ] as const;
 
-      // 4. Staffing
-      setStaffing(aggregateStaffing(staffingTasks, weekStart, weekEnd));
+      const [staffingTasks, allTasks, assignmentsWithRoles, crs, rsks] = await Promise.all(fetchPromises);
+
+      // 4. Staffing — filter assignments by week's task IDs
+      setStaffing(aggregateStaffing(staffingTasks, assignmentsWithRoles));
 
       // 5. Schedule cells
       const cells: ScheduleCell[] = allTasks.map((t) => ({
@@ -127,16 +142,11 @@ export function useWeeklyReport(
       }));
       setScheduleCells(cells);
 
-      // 6. Changes + risks
+      // 6. Changes + risks (empty for Small projects)
       setChanges(crs);
       setRisks(rsks);
 
-      // 7. Project info — pum_statusreporting doesn't expand initiative,
-      //    so use initiativeId to look up via pum_initiative → ecr_projectportfolio2.
-      //    For now leave project null until we have that join path confirmed.
-      setProject(null);
-
-      void fetchProjectByNumber; // unused until initiative→project link is confirmed
+      // 7. Project info now comes from initiative (aud_projectno, aud_customer)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -181,12 +191,13 @@ export function useWeeklyReport(
     loading,
     error,
     report,
-    project,
+    initiative,
     staffing,
     scheduleCells,
     scheduleColumns,
     changes,
     risks,
+    isLargeProject,
     updateField,
     save,
     saving,

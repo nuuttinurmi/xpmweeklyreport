@@ -44,9 +44,6 @@ export function ChangesTable({ changes }: ChangesProps) {
           </tbody>
         </table>
       )}
-      <p className="data-source-note">
-        Data source: xPM <code>pum_changerequest</code>. Automatic.
-      </p>
     </section>
   );
 }
@@ -57,10 +54,31 @@ interface RisksProps {
   risks: PumRisk[];
 }
 
-// pum_riskimpact is an option set; display raw value until labels are confirmed
+// pum_riskimpact option set labels (from xPM risk matrix)
+const IMPACT_LABELS: Record<number, string> = {
+  976880000: "1 - Very Low",
+  976880001: "2 - Low",
+  976880002: "3 - Medium",
+  976880003: "4 - High",
+  976880004: "5 - Very High",
+};
+
+const PROBABILITY_LABELS: Record<number, string> = {
+  976880000: "10 %",
+  976880001: "30 %",
+  976880002: "50 %",
+  976880003: "70 %",
+  976880004: "90 %",
+};
+
 function impactLabel(impact?: number): string {
   if (impact == null) return "—";
-  return String(impact);
+  return IMPACT_LABELS[impact] ?? String(impact);
+}
+
+function probabilityLabel(prob?: number): string {
+  if (prob == null) return "—";
+  return PROBABILITY_LABELS[prob] ?? String(prob);
 }
 
 export function RisksTable({ risks }: RisksProps) {
@@ -89,16 +107,13 @@ export function RisksTable({ risks }: RisksProps) {
                 </td>
                 <td className="data-table__num">{impactLabel(r.pum_riskimpact)}</td>
                 <td className="data-table__num">
-                  {r.pum_probability != null ? `${r.pum_probability} %` : "—"}
+                  {probabilityLabel(r.pum_probability)}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
-      <p className="data-source-note">
-        Data source: xPM <code>pum_risk</code> (Impact, Probability). Automatic.
-      </p>
     </section>
   );
 }

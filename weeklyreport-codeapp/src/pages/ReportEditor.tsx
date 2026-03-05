@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { ReportHeader } from "../components/ReportHeader";
 import { StaffingTable } from "../components/StaffingTable";
 import { ScheduleGrid } from "../components/ScheduleGrid";
@@ -24,12 +24,13 @@ export function ReportEditor({
     loading,
     error,
     report,
-    project,
+    initiative,
     staffing,
     scheduleCells,
     scheduleColumns,
     changes,
     risks,
+    isLargeProject,
     updateField,
     save,
     saving,
@@ -149,7 +150,7 @@ export function ReportEditor({
 
         <ReportHeader
           report={report}
-          project={project}
+          initiative={initiative}
           readOnly={isReadOnly}
         />
 
@@ -163,8 +164,8 @@ export function ReportEditor({
           readOnly={isReadOnly}
         />
 
-        <ChangesTable changes={changes} />
-        <RisksTable risks={risks} />
+        {isLargeProject && <ChangesTable changes={changes} />}
+        {isLargeProject && <RisksTable risks={risks} />}
       </div>
     </div>
   );

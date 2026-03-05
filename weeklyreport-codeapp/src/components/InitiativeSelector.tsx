@@ -105,11 +105,6 @@ export function InitiativeSelector({ value, onChange }: Props) {
                   <span className="initiative-selector__item-name">
                     {ini.pum_name}
                   </span>
-                  {ini.pum_projectnumber && (
-                    <span className="initiative-selector__item-num">
-                      {ini.pum_projectnumber}
-                    </span>
-                  )}
                 </li>
               ))}
             </ul>

@@ -11,10 +11,15 @@
 export interface PumInitiative {
   pum_initiativeid: string;
   pum_name: string;
-  pum_expectedstartdate?: string;
-  pum_expectedfinishdate?: string;
-  pum_projectnumber?: string; // used as join key to ecr_projectportfolio2
+  pum_initiativestart?: string;
+  pum_initiativefinish?: string;
+  pum_projecttype?: number; // 493840000 = Small, 493840002 = Large
+  aud_projectno?: string;   // Audico custom: project number (join key to ecr_projectportfolio2)
+  aud_customer?: string;    // Audico custom: customer name
 }
+
+export const PROJECT_TYPE_SMALL = 493840000;
+export const PROJECT_TYPE_LARGE = 493840002;
 
 export interface PumGanttTask {
   pum_gantttaskid: string;
@@ -160,8 +165,8 @@ export interface AudWeeklyReportTaskNote {
 // ── UI-only composite types ──────────────────────────────────
 
 export interface StaffingRow {
+  name: string;
   role: string;
-  count: number;
 }
 
 export interface TaskStatusRow {

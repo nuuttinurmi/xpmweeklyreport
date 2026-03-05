@@ -148,6 +148,51 @@ export async function fetchAssignmentsForInitiative(
   }));
 }
 
+// ── Assignments with resource + role expand (for staffing) ───
+
+export interface StaffingAssignment {
+  pum_assignmentid: string;
+  taskId: string;
+  resourceId: string;
+  resourceName: string;
+  resourceType: string;
+  roleName: string;
+}
+
+export async function fetchAssignmentsWithRoles(
+  initiativeId: string
+): Promise<StaffingAssignment[]> {
+  const filter = `$filter=_pum_initiative_value eq '${initiativeId}' and statecode eq 0`;
+  const select = "$select=pum_assignmentid,_pum_asstask_value";
+  const expand = "$expand=pum_Resource($select=pum_resourceid,pum_name,pum_resourcetype;$expand=pum_Role($select=pum_roleid,pum_name))";
+  const raw = await dvFetch<Record<string, unknown>>(
+    `pum_assignments?${select}&${filter}&${expand}`
+  );
+  return raw.map((r) => {
+    const resource = r.pum_Resource as Record<string, unknown> | null;
+    const role = resource?.pum_Role as Record<string, unknown> | null;
+    return {
+      pum_assignmentid: r.pum_assignmentid as string,
+      taskId: (r["_pum_asstask_value"] as string) ?? "",
+      resourceId: (resource?.pum_resourceid as string) ?? "",
+      resourceName: (resource?.pum_name as string) ?? "—",
+      resourceType: (resource?.pum_resourcetype as string) ?? "",
+      roleName: (role?.pum_name as string) ?? "Muu",
+    };
+  });
+}
+
+// ── Initiative with project type ─────────────────────────────
+
+export async function fetchInitiativeWithType(
+  initiativeId: string
+): Promise<PumInitiative | null> {
+  const select = "$select=pum_initiativeid,pum_name,pum_projecttype,aud_projectno,aud_customer,pum_initiativestart,pum_initiativefinish";
+  return dvFetchOne<PumInitiative>(
+    `pum_initiatives(${initiativeId})?${select}`
+  );
+}
+
 // ── Initiatives ──────────────────────────────────────────────
 
 export async function fetchInitiatives(search?: string): Promise<PumInitiative[]> {

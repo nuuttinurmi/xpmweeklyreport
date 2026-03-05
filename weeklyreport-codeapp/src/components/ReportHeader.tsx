@@ -1,9 +1,9 @@
 import React from "react";
-import type { PumStatusReporting, EcrProjectPortfolio2 } from "../types/dataverse";
+import type { PumStatusReporting, PumInitiative } from "../types/dataverse";
 
 interface Props {
   report: PumStatusReporting;
-  project: EcrProjectPortfolio2 | null;
+  initiative: PumInitiative | null;
   readOnly?: boolean;
 }
 
@@ -13,27 +13,21 @@ function fmtDate(iso?: string): string {
   return `${d.getUTCDate()}.${d.getUTCMonth() + 1}.${d.getUTCFullYear()}`;
 }
 
-export function ReportHeader({ report, project, readOnly = false }: Props) {
+export function ReportHeader({ report, initiative, readOnly = false }: Props) {
   void readOnly; // reserved for future inline editing in header fields
 
   const rows: { label: string; value: React.ReactNode }[] = [
     { label: "Date", value: fmtDate(report.pum_statusdate) },
-    { label: "Project Number", value: project?.ecr_projectnumber ?? "—" },
+    { label: "Project Number", value: initiative?.aud_projectno ?? "—" },
     {
       label: "Project",
-      value: project?.ecr_name ?? "—",
+      value: initiative?.pum_name ?? "—",
     },
-    { label: "Project Manager", value: project?.ecr_projectmanager ?? "—" },
     {
       label: "Client",
-      value: project?.ecr_customerid_account?.name ?? "—",
-    },
-    {
-      label: "Client Contact",
-      value: project?.ecr_contactid_contact?.fullname ?? "—",
+      value: initiative?.aud_customer ?? "—",
     },
     { label: "Phase", value: report.pum_currentphase ?? "—" },
-    { label: "Contract", value: project?.aud_agreement ?? "—" },
     {
       label: "Schedule Progress",
       value: report.pum_scheduleprogress != null
@@ -55,9 +49,6 @@ export function ReportHeader({ report, project, readOnly = false }: Props) {
           ))}
         </tbody>
       </table>
-      <p className="data-source-note">
-        Data source: xPM <code>pum_statusreporting</code> + Dynamics <code>ecr_projectportfolio2</code>. Automatic.
-      </p>
     </section>
   );
 }

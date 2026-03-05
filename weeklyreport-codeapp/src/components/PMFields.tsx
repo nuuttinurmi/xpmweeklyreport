@@ -126,9 +126,6 @@ export function PMFields({ report, onFieldChange, readOnly = false }: Props) {
             })}
           </tbody>
         </table>
-        <p className="data-source-note" style={{ marginTop: "4px" }}>
-          Current values: read-only (managed by xPM). Proposed values: entered by PM.
-        </p>
       </div>
     </section>
   );
