@@ -7,7 +7,7 @@ interface Props {
   columns: ReturnType<typeof buildScheduleColumns>;
 }
 
-const DAY_LABELS = ["Ma", "Ti", "Ke", "To", "Pe"];
+const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 export function ScheduleGrid({ cells, columns }: Props) {
   const { weeks, days } = columns;
@@ -16,9 +16,9 @@ export function ScheduleGrid({ cells, columns }: Props) {
 
   return (
     <section className="report-section">
-      <h2 className="report-section__title">Seuraavan 3 viikon aikataulu</h2>
+      <h2 className="report-section__title">3-Week Schedule</h2>
       {activeCells.length === 0 ? (
-        <p className="empty-state">Ei tehtäviä valitulla aikajänteellä.</p>
+        <p className="empty-state">No tasks in the selected time range.</p>
       ) : (
         <div className="schedule-wrapper">
           <table className="schedule-table">
@@ -26,10 +26,10 @@ export function ScheduleGrid({ cells, columns }: Props) {
               {/* Week header row */}
               <tr>
                 <th className="schedule-table__task-col" rowSpan={2}>
-                  Tehtävä
+                  Task
                 </th>
                 <th className="schedule-table__area-col" rowSpan={2}>
-                  Alue
+                  Area
                 </th>
                 {weeks.map((w) => (
                   <th
@@ -76,7 +76,7 @@ export function ScheduleGrid({ cells, columns }: Props) {
         </div>
       )}
       <p className="data-source-note">
-        Datalähde: xPM <code>pum_gantttask</code> (pum_startdate / pum_enddate). Automaattinen.
+        Data source: xPM <code>pum_gantttask</code> (pum_startdate / pum_enddate). Automatic.
       </p>
     </section>
   );

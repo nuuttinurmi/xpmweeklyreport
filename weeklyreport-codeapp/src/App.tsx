@@ -29,7 +29,7 @@ export default function App() {
 
     if (!DATAVERSE_URL) {
       setSdkError(
-        "DATAVERSE_URL ei ole asetettu. Lisää VITE_DATAVERSE_URL .env.local-tiedostoon."
+        "DATAVERSE_URL is not set. Add VITE_DATAVERSE_URL to your .env.local file."
       );
       return;
     }
@@ -48,7 +48,7 @@ export default function App() {
   if (sdkError) {
     return (
       <div className="app-error">
-        <h2>Konfigurointivirhe</h2>
+        <h2>Configuration Error</h2>
         <p>{sdkError}</p>
         <pre>
           {`# .env.local
@@ -63,7 +63,7 @@ VITE_PA_FLOW_URL=https://prod-xx.logic.azure.com/...`}
     return (
       <div className="app-loading">
         <div className="loading-spinner" />
-        <p>Alustetaan…</p>
+        <p>Initializing…</p>
       </div>
     );
   }

@@ -38,12 +38,12 @@ export function toISODateString(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-/** Formats a date as "3.3." (Finnish short date) */
+/** Formats a date as "3.3." (short date) */
 export function toFinnishShort(date: Date): string {
   return `${date.getUTCDate()}.${date.getUTCMonth() + 1}.`;
 }
 
-const FI_DAYS = ["Ma", "Ti", "Ke", "To", "Pe"];
+const FI_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 /**
  * Builds the 15-column (3 weeks × 5 days) header for the schedule grid.
@@ -70,7 +70,7 @@ export function buildScheduleColumns(
       }
     }
     const monday = getMondayOfISOWeek(w, y);
-    weeks.push({ week: w, year: y, label: `Vko ${w}` });
+    weeks.push({ week: w, year: y, label: `Wk ${w}` });
     for (let d = 0; d < 5; d++) {
       const day = new Date(monday);
       day.setUTCDate(monday.getUTCDate() + d);

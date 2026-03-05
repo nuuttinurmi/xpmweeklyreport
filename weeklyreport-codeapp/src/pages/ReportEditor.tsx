@@ -65,7 +65,7 @@ export function ReportEditor({
           year: report.aud_year,
         }),
       });
-      if (!res.ok) throw new Error(`Flow vastasi: ${res.status}`);
+      if (!res.ok) throw new Error(`Flow responded: ${res.status}`);
       setFlowSuccess(true);
     } catch (err: unknown) {
       setFlowError(err instanceof Error ? err.message : String(err));
@@ -78,7 +78,7 @@ export function ReportEditor({
     return (
       <div className="page page--loading">
         <div className="loading-spinner" />
-        <p>Ladataan raporttia…</p>
+        <p>Loading report…</p>
       </div>
     );
   }
@@ -88,7 +88,7 @@ export function ReportEditor({
       <div className="page">
         <div className="error-banner">{error}</div>
         <button className="btn" onClick={onBack}>
-          ← Takaisin
+          ← Back
         </button>
       </div>
     );
@@ -96,17 +96,17 @@ export function ReportEditor({
 
   if (!report) return null;
 
-  const isReadOnly = report.aud_status === "Lähetetty";
+  const isReadOnly = report.aud_status === "Sent";
 
   return (
     <div className="page page--editor">
       {/* ── Toolbar (hidden in print) ── */}
       <div className="editor-toolbar no-print">
         <button className="btn" onClick={onBack}>
-          ← Takaisin
+          ← Back
         </button>
         <div className="editor-toolbar__title">
-          Vko {report.aud_weeknumber}/{report.aud_year}
+          Wk {report.aud_weeknumber}/{report.aud_year}
           {dirty && <span className="dirty-indicator"> ●</span>}
         </div>
         <div className="editor-toolbar__actions">
@@ -116,20 +116,20 @@ export function ReportEditor({
               onClick={() => save()}
               disabled={saving || !dirty}
             >
-              {saving ? "Tallennetaan…" : "Tallenna"}
+              {saving ? "Saving…" : "Save"}
             </button>
           )}
           <button className="btn btn--secondary" onClick={handlePrint}>
-            Tulosta / Esikatsele
+            Print / Preview
           </button>
           {powerAutomateFlowUrl && (
             <button
               className="btn btn--primary"
               onClick={handleTriggerFlow}
               disabled={triggeringFlow || dirty}
-              title={dirty ? "Tallenna ensin" : "Generoi PDF SharePointiin"}
+              title={dirty ? "Save first" : "Generate PDF to SharePoint"}
             >
-              {triggeringFlow ? "Generoidaan…" : "Generoi PDF →"}
+              {triggeringFlow ? "Generating…" : "Generate PDF →"}
             </button>
           )}
         </div>
@@ -140,12 +140,12 @@ export function ReportEditor({
       )}
       {flowSuccess && (
         <div className="success-banner no-print">
-          PDF generoitu ja tallennettu SharePointiin.
+          PDF generated and saved to SharePoint.
           {report.aud_outputfileurl && (
             <>
               {" "}
               <a href={report.aud_outputfileurl} target="_blank" rel="noreferrer">
-                Avaa PDF
+                Open PDF
               </a>
             </>
           )}
@@ -154,7 +154,7 @@ export function ReportEditor({
 
       {/* ── Report content ── */}
       <div className="report-document">
-        <h1 className="report-title">TYÖVAIHEILMOITUS</h1>
+        <h1 className="report-title">WORK PHASE REPORT</h1>
 
         <ReportHeader
           report={report}

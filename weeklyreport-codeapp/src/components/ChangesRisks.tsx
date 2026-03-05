@@ -8,25 +8,25 @@ interface ChangesProps {
 }
 
 const STATUS_LABELS: Record<number, string> = {
-  1: "Avoin",
-  2: "Hyväksytty",
-  3: "Hylätty",
-  4: "Odottaa hyväksyntää",
+  1: "Open",
+  2: "Approved",
+  3: "Rejected",
+  4: "Pending Approval",
 };
 
 export function ChangesTable({ changes }: ChangesProps) {
   return (
     <section className="report-section">
-      <h3 className="report-section__subtitle">Muutokset</h3>
+      <h3 className="report-section__subtitle">Changes</h3>
       {changes.length === 0 ? (
-        <p className="empty-state">Ei kirjattuja muutoksia.</p>
+        <p className="empty-state">No recorded changes.</p>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>Muutos</th>
-              <th>Tila</th>
-              <th>Huomio</th>
+              <th>Change</th>
+              <th>Status</th>
+              <th>Note</th>
             </tr>
           </thead>
           <tbody>
@@ -45,7 +45,7 @@ export function ChangesTable({ changes }: ChangesProps) {
         </table>
       )}
       <p className="data-source-note">
-        Datalähde: xPM <code>pum_changerequest</code>. Automaattinen.
+        Data source: xPM <code>pum_changerequest</code>. Automatic.
       </p>
     </section>
   );
@@ -65,16 +65,16 @@ function impactLabel(impact?: number): string {
 export function RisksTable({ risks }: RisksProps) {
   return (
     <section className="report-section">
-      <h3 className="report-section__subtitle">Riskit</h3>
+      <h3 className="report-section__subtitle">Risks</h3>
       {risks.length === 0 ? (
-        <p className="empty-state">Ei aktiivisia riskejä.</p>
+        <p className="empty-state">No active risks.</p>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>Riski</th>
-              <th className="data-table__num">Vaikutus</th>
-              <th className="data-table__num">Todennäköisyys</th>
+              <th>Risk</th>
+              <th className="data-table__num">Impact</th>
+              <th className="data-table__num">Probability</th>
             </tr>
           </thead>
           <tbody>
@@ -96,7 +96,7 @@ export function RisksTable({ risks }: RisksProps) {
         </table>
       )}
       <p className="data-source-note">
-        Datalähde: xPM <code>pum_risk</code> (Impact, Probability). Automaattinen.
+        Data source: xPM <code>pum_risk</code> (Impact, Probability). Automatic.
       </p>
     </section>
   );

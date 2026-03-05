@@ -62,15 +62,15 @@ export function InitiativeSelector({ value, onChange }: Props) {
 
   return (
     <div className="initiative-selector" ref={containerRef}>
-      <label className="initiative-selector__label">Projekti (Initiative)</label>
+      <label className="initiative-selector__label">Project (Initiative)</label>
       <div className="initiative-selector__input-wrap">
         {value && !open ? (
           <button
             className="initiative-selector__selected"
             onClick={() => setOpen(true)}
           >
-            {selectedLabel || "Valittu projekti"}
-            <span className="initiative-selector__change">Vaihda</span>
+            {selectedLabel || "Selected project"}
+            <span className="initiative-selector__change">Change</span>
           </button>
         ) : (
           <input
@@ -80,16 +80,16 @@ export function InitiativeSelector({ value, onChange }: Props) {
             value={query}
             onChange={handleQueryChange}
             onFocus={() => setOpen(true)}
-            placeholder="Hae projektin nimellä tai numerolla…"
+            placeholder="Search by project name or number…"
           />
         )}
       </div>
       {open && (
         <div className="initiative-selector__dropdown">
           {loading ? (
-            <div className="initiative-selector__loading">Haetaan…</div>
+            <div className="initiative-selector__loading">Searching…</div>
           ) : options.length === 0 ? (
-            <div className="initiative-selector__empty">Ei tuloksia</div>
+            <div className="initiative-selector__empty">No results</div>
           ) : (
             <ul className="initiative-selector__list">
               {options.map((ini) => (

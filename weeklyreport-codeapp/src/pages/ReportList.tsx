@@ -108,7 +108,7 @@ export function ReportList({ onOpenReport }: Props) {
       (r) => r.aud_weeknumber === week && r.aud_year === year
     );
     if (duplicate) {
-      alert(`Viikon ${week}/${year} raportti on jo olemassa.`);
+      alert(`A report for week ${week}/${year} already exists.`);
       onOpenReport(duplicate.aud_weeklyreportid!, initiativeId);
       return;
     }
@@ -119,8 +119,8 @@ export function ReportList({ onOpenReport }: Props) {
       const newReport = await createWeeklyReport({
         aud_weeknumber: week,
         aud_year: year,
-        aud_status: "Luonnos",
-        aud_safetynotes: "Ei poikkeamia.",
+        aud_status: "Draft",
+        aud_safetynotes: "No incidents.",
         // Associate with initiative via OData bind
         "aud_initiative@odata.bind": `/pum_initiatives(${initiativeId})`,
       } as Omit<AudWeeklyReport, "aud_weeklyreportid">);
@@ -151,9 +151,9 @@ export function ReportList({ onOpenReport }: Props) {
   }
 
   const STATUS_BADGE: Record<string, string> = {
-    Luonnos: "badge--draft",
-    Valmis: "badge--ready",
-    Lähetetty: "badge--sent",
+    Draft: "badge--draft",
+    Ready: "badge--ready",
+    Sent: "badge--sent",
   };
 
   const assignmentsByTask = assignments.reduce<Map<string, AssignmentRow[]>>((map, a) => {
@@ -168,7 +168,7 @@ export function ReportList({ onOpenReport }: Props) {
   return (
     <div className="page page--list">
       <header className="page__header">
-        <h1 className="page__title">Työvaiheilmoitukset</h1>
+        <h1 className="page__title">Weekly Reports</h1>
       </header>
 
       <InitiativeSelector
@@ -186,7 +186,7 @@ export function ReportList({ onOpenReport }: Props) {
             onClick={handleNewReport}
             disabled={creating}
           >
-            {creating ? "Luodaan…" : "+ Uusi viikkoraportti"}
+            {creating ? "Creating…" : "+ New Weekly Report"}
           </button>
         </div>
       )}
@@ -195,21 +195,21 @@ export function ReportList({ onOpenReport }: Props) {
 
       {tablesMissing && (
         <div className="info-banner">
-          Raportit eivät ole saatavilla —{" "}
-          <code>aud_weeklyreport</code>-taulukko puuttuu ympäristöstä.
+          Reports unavailable —{" "}
+          <code>aud_weeklyreport</code> table is missing from this environment.
         </div>
       )}
 
-      {loading && <div className="loading-indicator">Ladataan…</div>}
+      {loading && <div className="loading-indicator">Loading…</div>}
 
       {!loading && reports.length > 0 && (
         <table className="data-table report-list-table">
           <thead>
             <tr>
-              <th>Viikko</th>
-              <th>Vuosi</th>
+              <th>Week</th>
+              <th>Year</th>
               <th>Status</th>
-              <th>Luotu</th>
+              <th>Created</th>
               <th>PDF</th>
               <th></th>
             </tr>
@@ -217,7 +217,7 @@ export function ReportList({ onOpenReport }: Props) {
           <tbody>
             {reports.map((r) => (
               <tr key={r.aud_weeklyreportid}>
-                <td>Vko {r.aud_weeknumber}</td>
+                <td>Wk {r.aud_weeknumber}</td>
                 <td>{r.aud_year}</td>
                 <td>
                   <span className={`badge ${STATUS_BADGE[r.aud_status] ?? ""}`}>
@@ -233,7 +233,7 @@ export function ReportList({ onOpenReport }: Props) {
                       rel="noreferrer"
                       className="link"
                     >
-                      Avaa PDF
+                      Open PDF
                     </a>
                   ) : (
                     <span className="empty-note">—</span>
@@ -246,7 +246,7 @@ export function ReportList({ onOpenReport }: Props) {
                       onOpenReport(r.aud_weeklyreportid!, initiativeId)
                     }
                   >
-                    Avaa
+                    Open
                   </button>
                 </td>
               </tr>
@@ -257,30 +257,30 @@ export function ReportList({ onOpenReport }: Props) {
 
       {!loading && initiativeId && reports.length === 0 && !tablesMissing && (
         <p className="empty-state">
-          Ei raportteja tälle projektille. Luo ensimmäinen raportti.
+          No reports for this project. Create the first report.
         </p>
       )}
 
       {!loading && initiativeId && hasOverviewData && (
         <section style={{ marginTop: "32px" }}>
           <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "12px" }}>
-            Projektin tiedot
+            Project Overview
           </h2>
 
           {tasks.length > 0 && (
             <>
               <h3 style={{ fontSize: "0.875rem", fontWeight: 600, margin: "12px 0 6px" }}>
-                Tehtävät ({tasks.length})
+                Tasks ({tasks.length})
               </h3>
               <table className="data-table">
                 <thead>
                   <tr>
                     <th>WBS</th>
-                    <th>Nimi</th>
-                    <th>Alkaa</th>
-                    <th>Päättyy</th>
-                    <th style={{ textAlign: "right" }}>Suunn. (h)</th>
-                    <th style={{ textAlign: "right" }}>Tot. (h)</th>
+                    <th>Name</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th style={{ textAlign: "right" }}>Planned (h)</th>
+                    <th style={{ textAlign: "right" }}>Actual (h)</th>
                   </tr>
                 </thead>
                 <tbody>

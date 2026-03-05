@@ -23,24 +23,24 @@ export function TaskStatusTable({ rows, onNoteChange, readOnly = false }: Props)
   }
 
   function formatCompletion(pct: number): string {
-    if (pct === 100) return "100 % — Valmis";
+    if (pct === 100) return "100 % — Complete";
     if (pct === 0) return "0 %";
     return `${pct} %`;
   }
 
   return (
     <section className="report-section">
-      <h2 className="report-section__title">Projektitilanne</h2>
+      <h2 className="report-section__title">Project Status</h2>
       {rows.length === 0 ? (
-        <p className="empty-state">Ei aktiivisia tehtäviä.</p>
+        <p className="empty-state">No active tasks.</p>
       ) : (
         <table className="data-table data-table--tasks">
           <thead>
             <tr>
-              <th>Tehtävä</th>
-              <th>Alue</th>
-              <th className="data-table__num">Valmiusaste</th>
-              <th>Huomioitavaa</th>
+              <th>Task</th>
+              <th>Area</th>
+              <th className="data-table__num">Completion</th>
+              <th>Notes</th>
             </tr>
           </thead>
           <tbody>
@@ -84,10 +84,10 @@ export function TaskStatusTable({ rows, onNoteChange, readOnly = false }: Props)
                     <span
                       className="notes-display"
                       onClick={() => startEdit(row)}
-                      title="Klikkaa muokataksesi"
+                      title="Click to edit"
                     >
                       {row.notes || (
-                        <span className="notes-placeholder">Lisää huomio…</span>
+                        <span className="notes-placeholder">Add note…</span>
                       )}
                     </span>
                   )}
@@ -98,8 +98,8 @@ export function TaskStatusTable({ rows, onNoteChange, readOnly = false }: Props)
         </table>
       )}
       <p className="data-source-note">
-        Datalähde: xPM <code>pum_gantttask</code> (Work / Actual work). Automaattinen.
-        Huomioitavaa = PM kirjoittaa.
+        Data source: xPM <code>pum_gantttask</code> (Work / Actual work). Automatic.
+        Notes = entered by PM.
       </p>
     </section>
   );

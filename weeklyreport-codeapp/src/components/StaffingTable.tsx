@@ -12,15 +12,15 @@ export function StaffingTable({ rows, weekNumber }: Props) {
 
   return (
     <section className="report-section">
-      <h2 className="report-section__title">Vahvuus (viikko {weekNumber})</h2>
+      <h2 className="report-section__title">Staffing (week {weekNumber})</h2>
       {rows.length === 0 ? (
-        <p className="empty-state">Ei resursseja tälle viikolle.</p>
+        <p className="empty-state">No resources for this week.</p>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>Rooli</th>
-              <th className="data-table__num">Henkilöitä</th>
+              <th>Role</th>
+              <th className="data-table__num">People</th>
             </tr>
           </thead>
           <tbody>
@@ -34,7 +34,7 @@ export function StaffingTable({ rows, weekNumber }: Props) {
           <tfoot>
             <tr className="data-table__total">
               <td>
-                <strong>Yhteensä</strong>
+                <strong>Total</strong>
               </td>
               <td className="data-table__num">
                 <strong>{total}</strong>
@@ -44,8 +44,8 @@ export function StaffingTable({ rows, weekNumber }: Props) {
         </table>
       )}
       <p className="data-source-note">
-        Datalähde: xPM <code>pum_gantttask → pum_assignment → pum_resource → pum_role</code>.
-        Vain Named-resurssit. Automaattinen.
+        Data source: xPM <code>pum_gantttask → pum_assignment → pum_resource → pum_role</code>.
+        Named resources only. Automatic.
       </p>
     </section>
   );

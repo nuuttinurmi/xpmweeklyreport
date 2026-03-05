@@ -21,25 +21,25 @@ export function ReportHeader({
     : `—/${report.aud_year}`;
 
   const rows: { label: string; value: React.ReactNode }[] = [
-    { label: "Päivämäärä / Järj. nro", value: reportNum },
-    { label: "Projektinumero", value: project?.ecr_projectnumber ?? "—" },
+    { label: "Date / Seq. No.", value: reportNum },
+    { label: "Project Number", value: project?.ecr_projectnumber ?? "—" },
     {
-      label: "Projekti",
+      label: "Project",
       value: project?.ecr_name ?? report.aud_initiative?.pum_name ?? "—",
     },
-    { label: "Projektipäällikkö", value: project?.ecr_projectmanager ?? "—" },
+    { label: "Project Manager", value: project?.ecr_projectmanager ?? "—" },
     {
-      label: "Asiakas",
+      label: "Client",
       value: project?.ecr_customerid_account?.name ?? "—",
     },
     {
-      label: "Asiakkaan yhteyshenkilö",
+      label: "Client Contact",
       value: project?.ecr_contactid_contact?.fullname ?? "—",
     },
-    { label: "Viikko", value: `Vko ${report.aud_weeknumber} / ${report.aud_year}` },
-    { label: "Urakka", value: project?.aud_agreement ?? "—" },
+    { label: "Week", value: `Wk ${report.aud_weeknumber} / ${report.aud_year}` },
+    { label: "Contract", value: project?.aud_agreement ?? "—" },
     {
-      label: "Lisätietoja",
+      label: "Additional Info",
       value: readOnly ? (
         report.aud_additionalinfo || "—"
       ) : (
@@ -47,7 +47,7 @@ export function ReportHeader({
           type="text"
           value={report.aud_additionalinfo ?? ""}
           onChange={(e) => onAdditionalInfoChange(e.target.value)}
-          placeholder="Vapaaehtoinen"
+          placeholder="Optional"
           className="field-input field-input--inline"
         />
       ),
@@ -56,7 +56,7 @@ export function ReportHeader({
 
   return (
     <section className="report-section">
-      <h2 className="report-section__title">Otsikkotiedot</h2>
+      <h2 className="report-section__title">Header</h2>
       <table className="header-table">
         <tbody>
           {rows.map(({ label, value }) => (
@@ -68,7 +68,7 @@ export function ReportHeader({
         </tbody>
       </table>
       <p className="data-source-note">
-        Datalähde: Dynamics <code>ecr_projectportfolio2</code>. Automaattinen.
+        Data source: Dynamics <code>ecr_projectportfolio2</code>. Automatic.
       </p>
     </section>
   );

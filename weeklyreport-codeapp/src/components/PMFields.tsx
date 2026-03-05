@@ -18,20 +18,20 @@ interface FieldConfig {
 const FIELDS: FieldConfig[] = [
   {
     field: "aud_actionitems",
-    label: "Muilta osapuolilta vaaditut toimenpiteet",
-    placeholder: "Esim. Asiakas: toimittaa mitat (DL vk 11), Sähköurakoitsija: vetää syötöt...",
+    label: "Actions required from other parties",
+    placeholder: "E.g. Client: deliver measurements (DL wk 11), Electrical contractor: pull feeds...",
     rows: 4,
   },
   {
     field: "aud_safetynotes",
-    label: "Työturvallisuus",
-    placeholder: "Ei poikkeamia.",
+    label: "Safety",
+    placeholder: "No incidents.",
     rows: 2,
   },
   {
     field: "aud_situationsummary",
-    label: "Vapaa teksti / tilannekuva",
-    placeholder: "Lyhyt kuvaus projektin tilanteesta, kriittiset asiat, seuraavat askeleet...",
+    label: "Situation summary",
+    placeholder: "Brief description of project status, critical issues, next steps...",
     rows: 5,
   },
 ];
@@ -39,7 +39,7 @@ const FIELDS: FieldConfig[] = [
 export function PMFields({ report, onFieldChange, readOnly = false }: Props) {
   return (
     <section className="report-section">
-      <h2 className="report-section__title">Muuta</h2>
+      <h2 className="report-section__title">Additional</h2>
       {FIELDS.map(({ field, label, placeholder, rows }) => (
         <div key={field} className="pm-field">
           <label className="pm-field__label">{label}</label>
@@ -70,9 +70,9 @@ export function PMFields({ report, onFieldChange, readOnly = false }: Props) {
               onFieldChange("aud_status", e.target.value)
             }
           >
-            <option value="Luonnos">Luonnos</option>
-            <option value="Valmis">Valmis</option>
-            <option value="Lähetetty">Lähetetty</option>
+            <option value="Draft">Draft</option>
+            <option value="Ready">Ready</option>
+            <option value="Sent">Sent</option>
           </select>
         </div>
       )}
