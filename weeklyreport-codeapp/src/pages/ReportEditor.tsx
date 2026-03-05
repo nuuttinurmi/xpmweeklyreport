@@ -159,7 +159,10 @@ export function ReportEditor({
 
       {/* ── Report content ── */}
       <div className="report-document">
-        <h1 className="report-title">{t("reportTitle", lang)}</h1>
+        <div className="report-header-row">
+          <img src="/audico-logo.png" alt="Audico" className="report-logo" />
+          <h1 className="report-title">{t("reportTitle", lang)}</h1>
+        </div>
 
         <ReportHeader
           report={report}
