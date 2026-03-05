@@ -1,31 +1,27 @@
 import React from "react";
-import type { AudWeeklyReport, EcrProjectPortfolio2 } from "../types/dataverse";
+import type { PumStatusReporting, EcrProjectPortfolio2 } from "../types/dataverse";
 
 interface Props {
-  report: AudWeeklyReport;
+  report: PumStatusReporting;
   project: EcrProjectPortfolio2 | null;
-  onAdditionalInfoChange: (value: string) => void;
   readOnly?: boolean;
-  sequenceNumber?: number;
 }
 
-export function ReportHeader({
-  report,
-  project,
-  onAdditionalInfoChange,
-  readOnly = false,
-  sequenceNumber,
-}: Props) {
-  const reportNum = sequenceNumber
-    ? `${String(sequenceNumber).padStart(3, "0")}/${report.aud_year}`
-    : `—/${report.aud_year}`;
+function fmtDate(iso?: string): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return `${d.getUTCDate()}.${d.getUTCMonth() + 1}.${d.getUTCFullYear()}`;
+}
+
+export function ReportHeader({ report, project, readOnly = false }: Props) {
+  void readOnly; // reserved for future inline editing in header fields
 
   const rows: { label: string; value: React.ReactNode }[] = [
-    { label: "Date / Seq. No.", value: reportNum },
+    { label: "Date", value: fmtDate(report.pum_statusdate) },
     { label: "Project Number", value: project?.ecr_projectnumber ?? "—" },
     {
       label: "Project",
-      value: project?.ecr_name ?? report.aud_initiative?.pum_name ?? "—",
+      value: project?.ecr_name ?? "—",
     },
     { label: "Project Manager", value: project?.ecr_projectmanager ?? "—" },
     {
@@ -36,21 +32,13 @@ export function ReportHeader({
       label: "Client Contact",
       value: project?.ecr_contactid_contact?.fullname ?? "—",
     },
-    { label: "Week", value: `Wk ${report.aud_weeknumber} / ${report.aud_year}` },
+    { label: "Phase", value: report.pum_currentphase ?? "—" },
     { label: "Contract", value: project?.aud_agreement ?? "—" },
     {
-      label: "Additional Info",
-      value: readOnly ? (
-        report.aud_additionalinfo || "—"
-      ) : (
-        <input
-          type="text"
-          value={report.aud_additionalinfo ?? ""}
-          onChange={(e) => onAdditionalInfoChange(e.target.value)}
-          placeholder="Optional"
-          className="field-input field-input--inline"
-        />
-      ),
+      label: "Schedule Progress",
+      value: report.pum_scheduleprogress != null
+        ? `${report.pum_scheduleprogress} %`
+        : "—",
     },
   ];
 
@@ -68,7 +56,7 @@ export function ReportHeader({
         </tbody>
       </table>
       <p className="data-source-note">
-        Data source: Dynamics <code>ecr_projectportfolio2</code>. Automatic.
+        Data source: xPM <code>pum_statusreporting</code> + Dynamics <code>ecr_projectportfolio2</code>. Automatic.
       </p>
     </section>
   );

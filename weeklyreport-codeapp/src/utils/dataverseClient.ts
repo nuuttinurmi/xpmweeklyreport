@@ -21,6 +21,7 @@ import type {
   EcrProjectPortfolio2,
   AudWeeklyReport,
   AudWeeklyReportTaskNote,
+  PumStatusReporting,
 } from "../types/dataverse";
 
 // Injected at init time from power.config.json / SDK
@@ -53,6 +54,26 @@ async function dvFetch<T>(path: string): Promise<T[]> {
   }
   const json = await res.json();
   return json.value ?? [];
+}
+
+async function dvFetchOne<T>(path: string): Promise<T | null> {
+  const token = await _getToken();
+  const url = `${_baseUrl}/api/data/v9.2/${path}`;
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+      "OData-MaxVersion": "4.0",
+      "OData-Version": "4.0",
+      Prefer: "odata.include-annotations=OData.Community.Display.V1.FormattedValue",
+    },
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Dataverse OData error ${res.status}: ${text}`);
+  }
+  return res.json() as Promise<T>;
 }
 
 async function dvPost<T>(path: string, body: object): Promise<T> {
@@ -110,7 +131,7 @@ export interface AssignmentRow {
 export async function fetchAssignmentsForInitiative(
   initiativeId: string
 ): Promise<AssignmentRow[]> {
-  const filter = `$filter=_pum_initiative_value eq ${initiativeId} and statecode eq 0`;
+  const filter = `$filter=_pum_initiative_value eq '${initiativeId}' and statecode eq 0`;
   const select =
     "$select=pum_assignmentid,_pum_asstask_value,_pum_resource_value,pum_taskname,pum_assignmentwork,pum_assignmentactualwork";
   const raw = await dvFetch<Record<string, unknown>>(
@@ -162,7 +183,7 @@ export async function fetchGanttTasksWithStaffing(
   weekEnd: string
 ): Promise<PumGanttTask[]> {
   // Date filter: tasks that overlap the target week
-  const filter = `$filter=_pum_initiative_value eq ${initiativeId} and pum_startdate le ${weekEnd}T23:59:59Z and pum_enddate ge ${weekStart}T00:00:00Z`;
+  const filter = `$filter=_pum_initiative_value eq '${initiativeId}' and pum_startdate le ${weekEnd}T23:59:59Z and pum_enddate ge ${weekStart}T00:00:00Z`;
   const select = "$select=pum_gantttaskid,pum_name,pum_startdate,pum_enddate,pum_wbs,pum_duration";
   // Assignment expand disabled until navigation property names are confirmed
   return dvFetch<PumGanttTask>(`pum_gantttasks?${select}&${filter}`);
@@ -174,7 +195,7 @@ export async function fetchAllGanttTasks(
   gridStart: string,
   gridEnd: string
 ): Promise<PumGanttTask[]> {
-  const filter = `$filter=_pum_initiative_value eq ${initiativeId} and pum_startdate le ${gridEnd}T23:59:59Z and pum_enddate ge ${gridStart}T00:00:00Z`;
+  const filter = `$filter=_pum_initiative_value eq '${initiativeId}' and pum_startdate le ${gridEnd}T23:59:59Z and pum_enddate ge ${gridStart}T00:00:00Z`;
   const select = "$select=pum_gantttaskid,pum_name,pum_startdate,pum_enddate,pum_wbs,pum_duration,pum_tasktype";
   return dvFetch<PumGanttTask>(`pum_gantttasks?${select}&${filter}&$orderby=pum_wbs asc`);
 }
@@ -183,7 +204,7 @@ export async function fetchAllGanttTasks(
 export async function fetchTasksWithWork(
   initiativeId: string
 ): Promise<PumGanttTask[]> {
-  const filter = `$filter=_pum_initiative_value eq ${initiativeId} and statecode eq 0`;
+  const filter = `$filter=_pum_initiative_value eq '${initiativeId}' and statecode eq 0`;
   const select = "$select=pum_gantttaskid,pum_name,pum_wbs,pum_startdate,pum_enddate,pum_tasktype";
   // Note: Work/ActualWork field names may vary per xPM version — confirm with pac code list-tables
   return dvFetch<PumGanttTask>(`pum_gantttasks?${select}&${filter}&$orderby=pum_wbs asc`);
@@ -194,7 +215,7 @@ export async function fetchTasksWithWork(
 export async function fetchChangeRequests(
   initiativeId: string
 ): Promise<PumChangeRequest[]> {
-  const filter = `$filter=_pum_initiative_value eq ${initiativeId}`;
+  const filter = `$filter=_pum_initiative_value eq '${initiativeId}'`;
   const select = "$select=pum_changerequestid,pum_name,pum_description,statuscode";
   return dvFetch<PumChangeRequest>(`pum_changerequests?${select}&${filter}&$orderby=createdon desc`);
 }
@@ -202,9 +223,53 @@ export async function fetchChangeRequests(
 // ── Risks ────────────────────────────────────────────────────
 
 export async function fetchRisks(initiativeId: string): Promise<PumRisk[]> {
-  const filter = `$filter=_pum_initiative_value eq ${initiativeId} and statecode eq 0`;
-  const select = "$select=pum_riskid,pum_name,pum_description,pum_impact,pum_probability";
-  return dvFetch<PumRisk>(`pum_risks?${select}&${filter}&$orderby=pum_impact desc`);
+  const filter = `$filter=_pum_initiative_value eq '${initiativeId}' and statecode eq 0`;
+  const select = "$select=pum_riskid,pum_name,pum_riskdescription,pum_riskimpact,pum_probability,pum_riskstatus";
+  return dvFetch<PumRisk>(`pum_risks?${select}&${filter}&$orderby=pum_riskimpact desc`);
+}
+
+// ── StatusReporting CRUD ─────────────────────────────────────
+// Uses existing xPM entity pum_statusreporting (collection: pum_statusreportings)
+
+const STATUS_REPORT_SELECT =
+  "$select=pum_statusreportingid,pum_statusdate,pum_comment,pum_statuscategory,statecode," +
+  "pum_currentphase,pum_scheduleprogress,pum_actualcost,pum_budget," +
+  "pum_kpicurrentresources,pum_kpicurrentsummary,pum_kpicurrentquality," +
+  "pum_kpicurrentcost,pum_kpicurrentscope,pum_kpicurrentschedule," +
+  "pum_kpinewresources,pum_kpinewsummary,pum_kpinewquality," +
+  "pum_kpinewcost,pum_kpinewscope,pum_kpinewschedule," +
+  "pum_kpinewresourcescomment,pum_kpinewqualitycomment," +
+  "pum_kpinewcostcomment,pum_kpinewscopecomment,pum_kpinewschedulecomment," +
+  "_pum_initiative_value";
+
+export async function fetchStatusReports(
+  initiativeId: string
+): Promise<PumStatusReporting[]> {
+  const filter = `$filter=_pum_initiative_value eq '${initiativeId}' and statecode eq 0`;
+  return dvFetch<PumStatusReporting>(
+    `pum_statusreportings?${STATUS_REPORT_SELECT}&${filter}&$orderby=pum_statusdate desc`
+  );
+}
+
+export async function fetchStatusReport(
+  reportId: string
+): Promise<PumStatusReporting | null> {
+  return dvFetchOne<PumStatusReporting>(
+    `pum_statusreportings(${reportId})?${STATUS_REPORT_SELECT}`
+  );
+}
+
+export async function createStatusReport(
+  data: Partial<PumStatusReporting> & { "pum_Initiative@odata.bind": string }
+): Promise<PumStatusReporting> {
+  return dvPost<PumStatusReporting>("pum_statusreportings", data);
+}
+
+export async function updateStatusReport(
+  reportId: string,
+  data: Partial<PumStatusReporting>
+): Promise<void> {
+  return dvPatch(`pum_statusreportings(${reportId})`, data);
 }
 
 // ── WeeklyReport CRUD ────────────────────────────────────────
@@ -212,7 +277,7 @@ export async function fetchRisks(initiativeId: string): Promise<PumRisk[]> {
 export async function fetchWeeklyReports(
   initiativeId: string
 ): Promise<AudWeeklyReport[]> {
-  const filter = `$filter=_aud_initiative_value eq ${initiativeId}`;
+  const filter = `$filter=_aud_initiative_value eq '${initiativeId}'`;
   const select = "$select=aud_weeklyreportid,aud_weeknumber,aud_year,aud_status,aud_outputfileurl,createdon";
   return dvFetch<AudWeeklyReport>(
     `aud_weeklyreports?${select}&${filter}&$orderby=aud_year desc,aud_weeknumber desc`
@@ -223,11 +288,7 @@ export async function fetchWeeklyReport(
   reportId: string
 ): Promise<AudWeeklyReport | null> {
   const select = "$select=aud_weeklyreportid,aud_weeknumber,aud_year,aud_status,aud_actionitems,aud_safetynotes,aud_situationsummary,aud_additionalinfo,aud_outputfileurl";
-  const results = await dvFetch<AudWeeklyReport>(
-    `aud_weeklyreports(${reportId})?${select}`
-  );
-  // Single record endpoint returns object, not array — handle both
-  return (results as unknown as AudWeeklyReport) ?? null;
+  return dvFetchOne<AudWeeklyReport>(`aud_weeklyreports(${reportId})?${select}`);
 }
 
 export async function createWeeklyReport(
@@ -248,7 +309,7 @@ export async function updateWeeklyReport(
 export async function fetchTaskNotes(
   reportId: string
 ): Promise<AudWeeklyReportTaskNote[]> {
-  const filter = `$filter=_aud_weeklyreport_value eq ${reportId}`;
+  const filter = `$filter=_aud_weeklyreport_value eq '${reportId}'`;
   const select = "$select=aud_weeklyreporttasknoteid,aud_notes,_aud_gantttask_value";
   const expand = "$expand=aud_gantttask($select=pum_gantttaskid,pum_name,pum_wbs)";
   return dvFetch<AudWeeklyReportTaskNote>(

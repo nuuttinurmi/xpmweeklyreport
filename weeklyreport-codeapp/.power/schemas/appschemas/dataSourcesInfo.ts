@@ -67,5 +67,12 @@ export const dataSourcesInfo = {
     "primaryKey": "pum_roleid",
     "dataSourceType": "Dataverse",
     "apis": {}
+  },
+  "pum_statusreportings": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "pum_statusreportingid",
+    "dataSourceType": "Dataverse",
+    "apis": {}
   }
 };

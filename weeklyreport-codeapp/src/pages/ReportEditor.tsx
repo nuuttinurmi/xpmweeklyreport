@@ -1,18 +1,17 @@
 import React, { useState } from "react";
 import { ReportHeader } from "../components/ReportHeader";
 import { StaffingTable } from "../components/StaffingTable";
-import { TaskStatusTable } from "../components/TaskStatusTable";
 import { ScheduleGrid } from "../components/ScheduleGrid";
 import { ChangesTable, RisksTable } from "../components/ChangesRisks";
 import { PMFields } from "../components/PMFields";
 import { useWeeklyReport } from "../hooks/useWeeklyReport";
-import type { AudWeeklyReport } from "../types/dataverse";
+import { getISOWeek } from "../utils/weekUtils";
 
 interface Props {
   reportId: string;
   initiativeId: string;
   onBack: () => void;
-  powerAutomateFlowUrl?: string; // HTTP-triggered PA flow URL for SharePoint PDF
+  powerAutomateFlowUrl?: string;
 }
 
 export function ReportEditor({
@@ -27,13 +26,11 @@ export function ReportEditor({
     report,
     project,
     staffing,
-    taskRows,
     scheduleCells,
     scheduleColumns,
     changes,
     risks,
     updateField,
-    updateTaskNote,
     save,
     saving,
     dirty,
@@ -44,7 +41,6 @@ export function ReportEditor({
   const [flowSuccess, setFlowSuccess] = useState(false);
 
   async function handlePrint() {
-    // Auto-save before print
     if (dirty) await save();
     window.print();
   }
@@ -59,10 +55,9 @@ export function ReportEditor({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          reportId: report.aud_weeklyreportid,
+          reportId: report.pum_statusreportingid,
           initiativeId,
-          weekNumber: report.aud_weeknumber,
-          year: report.aud_year,
+          statusDate: report.pum_statusdate,
         }),
       });
       if (!res.ok) throw new Error(`Flow responded: ${res.status}`);
@@ -96,7 +91,13 @@ export function ReportEditor({
 
   if (!report) return null;
 
-  const isReadOnly = report.aud_status === "Sent";
+  const isReadOnly = report.statecode !== 0;
+
+  const { week, year } = report.pum_statusdate
+    ? getISOWeek(new Date(report.pum_statusdate))
+    : { week: 0, year: 0 };
+
+  const titleLabel = week > 0 ? `Wk ${week}/${year}` : "Status Report";
 
   return (
     <div className="page page--editor">
@@ -106,7 +107,7 @@ export function ReportEditor({
           ← Back
         </button>
         <div className="editor-toolbar__title">
-          Wk {report.aud_weeknumber}/{report.aud_year}
+          {titleLabel}
           {dirty && <span className="dirty-indicator"> ●</span>}
         </div>
         <div className="editor-toolbar__actions">
@@ -135,20 +136,10 @@ export function ReportEditor({
         </div>
       </div>
 
-      {flowError && (
-        <div className="error-banner no-print">{flowError}</div>
-      )}
+      {flowError && <div className="error-banner no-print">{flowError}</div>}
       {flowSuccess && (
         <div className="success-banner no-print">
           PDF generated and saved to SharePoint.
-          {report.aud_outputfileurl && (
-            <>
-              {" "}
-              <a href={report.aud_outputfileurl} target="_blank" rel="noreferrer">
-                Open PDF
-              </a>
-            </>
-          )}
         </div>
       )}
 
@@ -159,25 +150,16 @@ export function ReportEditor({
         <ReportHeader
           report={report}
           project={project}
-          onAdditionalInfoChange={(v) => updateField("aud_additionalinfo", v)}
           readOnly={isReadOnly}
         />
 
-        <StaffingTable rows={staffing} weekNumber={report.aud_weeknumber} />
-
-        <TaskStatusTable
-          rows={taskRows}
-          onNoteChange={updateTaskNote}
-          readOnly={isReadOnly}
-        />
+        <StaffingTable rows={staffing} weekNumber={week} />
 
         <ScheduleGrid cells={scheduleCells} columns={scheduleColumns} />
 
         <PMFields
           report={report}
-          onFieldChange={(field, value) =>
-            updateField(field as keyof AudWeeklyReport, value)
-          }
+          onFieldChange={updateField}
           readOnly={isReadOnly}
         />
 

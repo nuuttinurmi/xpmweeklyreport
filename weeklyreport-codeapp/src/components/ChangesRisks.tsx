@@ -57,9 +57,10 @@ interface RisksProps {
   risks: PumRisk[];
 }
 
+// pum_riskimpact is an option set; display raw value until labels are confirmed
 function impactLabel(impact?: number): string {
-  if (!impact) return "—";
-  return `${impact}/5`;
+  if (impact == null) return "—";
+  return String(impact);
 }
 
 export function RisksTable({ risks }: RisksProps) {
@@ -82,11 +83,11 @@ export function RisksTable({ risks }: RisksProps) {
               <tr key={r.pum_riskid}>
                 <td>
                   <strong>{r.pum_name}</strong>
-                  {r.pum_description && (
-                    <div className="risk-description">{r.pum_description}</div>
+                  {r.pum_riskdescription && (
+                    <div className="risk-description">{r.pum_riskdescription}</div>
                   )}
                 </td>
-                <td className="data-table__num">{impactLabel(r.pum_impact)}</td>
+                <td className="data-table__num">{impactLabel(r.pum_riskimpact)}</td>
                 <td className="data-table__num">
                   {r.pum_probability != null ? `${r.pum_probability} %` : "—"}
                 </td>

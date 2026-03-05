@@ -14,6 +14,7 @@ export * as Pum_initiativesModel from './models/Pum_initiativesModel';
 export * as Pum_resourcesModel from './models/Pum_resourcesModel';
 export * as Pum_risksModel from './models/Pum_risksModel';
 export * as Pum_rolesModel from './models/Pum_rolesModel';
+export * as Pum_statusreportingsModel from './models/Pum_statusreportingsModel';
 
 // Services
 export * from './services/AccountsService';
@@ -25,3 +26,4 @@ export * from './services/Pum_initiativesService';
 export * from './services/Pum_resourcesService';
 export * from './services/Pum_risksService';
 export * from './services/Pum_rolesService';
+export * from './services/Pum_statusreportingsService';

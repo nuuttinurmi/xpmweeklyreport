@@ -65,10 +65,11 @@ export interface PumChangeRequest {
 export interface PumRisk {
   pum_riskid: string;
   pum_name: string;
-  pum_description?: string;
-  pum_impact?: number;       // 1–5
-  pum_probability?: number;  // 0–100
-  pum_initiativeid?: string;
+  pum_riskdescription?: string;
+  pum_riskimpact?: number;   // option set, e.g. 976880001 = "2 - Low"
+  pum_probability?: number;  // option set, e.g. 976880003 = "60%"
+  pum_riskstatus?: number;   // option set, e.g. 493840000 = "Identified"
+  _pum_initiative_value?: string;
   statecode?: number;        // 0 = active
 }
 
@@ -89,9 +90,47 @@ export interface EcrProjectPortfolio2 {
   ecr_contactid_contact?: { fullname: string };
 }
 
+// ── xPM status reporting ─────────────────────────────────────
+
+/** KPI traffic-light option set value (493840000 = Not Set) */
+export type KpiValue = number;
+
+export interface PumStatusReporting {
+  pum_statusreportingid: string;
+  pum_statusdate?: string;           // ISO date, e.g. "2026-03-05T00:00:00Z"
+  pum_comment?: string;              // main PM free-text
+  pum_statuscategory?: number;       // option set
+  statecode?: number;                // 0 = active, 1 = inactive
+  pum_currentphase?: string;         // e.g. "1. Initiate"
+  pum_scheduleprogress?: number;     // 0–100
+  pum_actualcost?: number;
+  pum_budget?: number;
+  // KPI current (read-only, xPM-managed)
+  pum_kpicurrentresources?: KpiValue;
+  pum_kpicurrentsummary?: KpiValue;
+  pum_kpicurrentquality?: KpiValue;
+  pum_kpicurrentcost?: KpiValue;
+  pum_kpicurrentscope?: KpiValue;
+  pum_kpicurrentschedule?: KpiValue;
+  // KPI new (PM-editable proposals)
+  pum_kpinewresources?: KpiValue;
+  pum_kpinewsummary?: KpiValue;
+  pum_kpinewquality?: KpiValue;
+  pum_kpinewcost?: KpiValue;
+  pum_kpinewscope?: KpiValue;
+  pum_kpinewschedule?: KpiValue;
+  pum_kpinewresourcescomment?: string;
+  pum_kpinewqualitycomment?: string;
+  pum_kpinewcostcomment?: string;
+  pum_kpinewscopecomment?: string;
+  pum_kpinewschedulecomment?: string;
+  // lookup
+  _pum_initiative_value?: string;
+}
+
 // ── New tables (aud_) ────────────────────────────────────────
 
-export type ReportStatus = "Luonnos" | "Valmis" | "Lähetetty";
+export type ReportStatus = "Draft" | "Ready" | "Sent";
 
 export interface AudWeeklyReport {
   aud_weeklyreportid?: string;

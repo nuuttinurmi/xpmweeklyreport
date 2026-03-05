@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import type {
   PumInitiative,
-  AudWeeklyReport,
+  PumStatusReporting,
   PumGanttTask,
   PumChangeRequest,
   PumRisk,
@@ -9,16 +9,15 @@ import type {
 import { InitiativeSelector } from "../components/InitiativeSelector";
 import { ChangesTable, RisksTable } from "../components/ChangesRisks";
 import {
-  fetchWeeklyReports,
-  createWeeklyReport,
+  fetchStatusReports,
+  createStatusReport,
   fetchAllGanttTasks,
-  upsertTaskNote,
   fetchChangeRequests,
   fetchRisks,
   fetchAssignmentsForInitiative,
   type AssignmentRow,
 } from "../utils/dataverseClient";
-import { getISOWeek } from "../utils/weekUtils";
+import { toISODateString } from "../utils/weekUtils";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "—";
@@ -33,11 +32,10 @@ interface Props {
 export function ReportList({ onOpenReport }: Props) {
   const [initiativeId, setInitiativeId] = useState<string | null>(null);
   const [_initiative, setInitiative] = useState<PumInitiative | null>(null);
-  const [reports, setReports] = useState<AudWeeklyReport[]>([]);
+  const [reports, setReports] = useState<PumStatusReporting[]>([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tablesMissing, setTablesMissing] = useState(false);
 
   const [tasks, setTasks] = useState<PumGanttTask[]>([]);
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
@@ -52,7 +50,6 @@ export function ReportList({ onOpenReport }: Props) {
   async function loadReports(id: string) {
     setLoading(true);
     setError(null);
-    setTablesMissing(false);
     setReports([]);
     setTasks([]);
     setAssignments([]);
@@ -61,7 +58,7 @@ export function ReportList({ onOpenReport }: Props) {
 
     const [reportsResult, tasksResult, assignmentsResult, changesResult, risksResult] =
       await Promise.allSettled([
-        fetchWeeklyReports(id),
+        fetchStatusReports(id),
         fetchAllGanttTasks(id, "2020-01-01", "2030-12-31"),
         fetchAssignmentsForInitiative(id),
         fetchChangeRequests(id),
@@ -75,72 +72,36 @@ export function ReportList({ onOpenReport }: Props) {
         reportsResult.reason instanceof Error
           ? reportsResult.reason.message
           : String(reportsResult.reason);
-      if (msg.includes("404")) {
-        setTablesMissing(true);
-      } else {
-        setError(msg);
-      }
+      setError(msg);
     }
 
-    if (tasksResult.status === "fulfilled") {
-      setTasks(tasksResult.value);
-    }
-    if (assignmentsResult.status === "fulfilled") {
-      setAssignments(assignmentsResult.value);
-    }
-    if (changesResult.status === "fulfilled") {
-      setChanges(changesResult.value);
-    }
-    if (risksResult.status === "fulfilled") {
-      setRisks(risksResult.value);
-    }
+    if (tasksResult.status === "fulfilled") setTasks(tasksResult.value);
+    if (assignmentsResult.status === "fulfilled") setAssignments(assignmentsResult.value);
+    if (changesResult.status === "fulfilled") setChanges(changesResult.value);
+    if (risksResult.status === "fulfilled") setRisks(risksResult.value);
 
     setLoading(false);
   }
 
   async function handleNewReport() {
     if (!initiativeId) return;
-    const now = new Date();
-    const { week, year } = getISOWeek(now);
+    const today = toISODateString(new Date());
 
-    // Guard: prevent duplicate for same week
-    const duplicate = reports.find(
-      (r) => r.aud_weeknumber === week && r.aud_year === year
-    );
+    const duplicate = reports.find((r) => r.pum_statusdate?.slice(0, 10) === today);
     if (duplicate) {
-      alert(`A report for week ${week}/${year} already exists.`);
-      onOpenReport(duplicate.aud_weeklyreportid!, initiativeId);
+      alert(`A report for ${today} already exists.`);
+      onOpenReport(duplicate.pum_statusreportingid, initiativeId);
       return;
     }
 
     setCreating(true);
     setError(null);
     try {
-      const newReport = await createWeeklyReport({
-        aud_weeknumber: week,
-        aud_year: year,
-        aud_status: "Draft",
-        aud_safetynotes: "No incidents.",
-        // Associate with initiative via OData bind
-        "aud_initiative@odata.bind": `/pum_initiatives(${initiativeId})`,
-      } as Omit<AudWeeklyReport, "aud_weeklyreportid">);
-
-      const reportId = newReport.aud_weeklyreportid!;
-
-      // Auto-create task note stubs for active tasks
-      try {
-        const startOfYear = `${year}-01-01`;
-        const endOfYear = `${year}-12-31`;
-        const tasks = await fetchAllGanttTasks(initiativeId, startOfYear, endOfYear);
-        await Promise.all(
-          tasks.map((t) =>
-            upsertTaskNote(undefined, reportId, t.pum_gantttaskid, "")
-          )
-        );
-      } catch {
-        // Non-fatal — task stubs can be created manually
-      }
-
+      const newReport = await createStatusReport({
+        pum_statusdate: today,
+        "pum_Initiative@odata.bind": `/pum_initiatives(${initiativeId})`,
+      });
+      const reportId = newReport.pum_statusreportingid;
       await loadReports(initiativeId);
       onOpenReport(reportId, initiativeId);
     } catch (err: unknown) {
@@ -149,12 +110,6 @@ export function ReportList({ onOpenReport }: Props) {
       setCreating(false);
     }
   }
-
-  const STATUS_BADGE: Record<string, string> = {
-    Draft: "badge--draft",
-    Ready: "badge--ready",
-    Sent: "badge--sent",
-  };
 
   const assignmentsByTask = assignments.reduce<Map<string, AssignmentRow[]>>((map, a) => {
     if (!map.has(a.taskId)) map.set(a.taskId, []);
@@ -186,65 +141,34 @@ export function ReportList({ onOpenReport }: Props) {
             onClick={handleNewReport}
             disabled={creating}
           >
-            {creating ? "Creating…" : "+ New Weekly Report"}
+            {creating ? "Creating…" : "+ New Status Report"}
           </button>
         </div>
       )}
 
       {error && <div className="error-banner">{error}</div>}
-
-      {tablesMissing && (
-        <div className="info-banner">
-          Reports unavailable —{" "}
-          <code>aud_weeklyreport</code> table is missing from this environment.
-        </div>
-      )}
-
       {loading && <div className="loading-indicator">Loading…</div>}
 
       {!loading && reports.length > 0 && (
         <table className="data-table report-list-table">
           <thead>
             <tr>
-              <th>Week</th>
-              <th>Year</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th>PDF</th>
+              <th>Date</th>
+              <th>Phase</th>
+              <th>Progress</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {reports.map((r) => (
-              <tr key={r.aud_weeklyreportid}>
-                <td>Wk {r.aud_weeknumber}</td>
-                <td>{r.aud_year}</td>
-                <td>
-                  <span className={`badge ${STATUS_BADGE[r.aud_status] ?? ""}`}>
-                    {r.aud_status}
-                  </span>
-                </td>
-                <td>—</td>
-                <td>
-                  {r.aud_outputfileurl ? (
-                    <a
-                      href={r.aud_outputfileurl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="link"
-                    >
-                      Open PDF
-                    </a>
-                  ) : (
-                    <span className="empty-note">—</span>
-                  )}
-                </td>
+              <tr key={r.pum_statusreportingid}>
+                <td style={{ whiteSpace: "nowrap" }}>{fmtDate(r.pum_statusdate)}</td>
+                <td>{r.pum_currentphase ?? "—"}</td>
+                <td>{r.pum_scheduleprogress != null ? `${r.pum_scheduleprogress} %` : "—"}</td>
                 <td>
                   <button
                     className="btn btn--small"
-                    onClick={() =>
-                      onOpenReport(r.aud_weeklyreportid!, initiativeId)
-                    }
+                    onClick={() => onOpenReport(r.pum_statusreportingid, initiativeId!)}
                   >
                     Open
                   </button>
@@ -255,7 +179,7 @@ export function ReportList({ onOpenReport }: Props) {
         </table>
       )}
 
-      {!loading && initiativeId && reports.length === 0 && !tablesMissing && (
+      {!loading && initiativeId && reports.length === 0 && !error && (
         <p className="empty-state">
           No reports for this project. Create the first report.
         </p>
@@ -293,8 +217,7 @@ export function ReportList({ onOpenReport }: Props) {
                           <td>{t.pum_name}</td>
                           <td style={{ whiteSpace: "nowrap" }}>{fmtDate(t.pum_startdate)}</td>
                           <td style={{ whiteSpace: "nowrap" }}>{fmtDate(t.pum_enddate)}</td>
-                          <td />
-                          <td />
+                          <td /><td />
                         </tr>
                         {taskAssignments.map((a) => (
                           <tr key={a.pum_assignmentid} style={{ background: "#f9f9f9" }}>
