@@ -1,10 +1,13 @@
 import React from "react";
 import type { PumStatusReporting, PumInitiative } from "../types/dataverse";
+import type { Lang } from "../i18n/translations";
+import { t } from "../i18n/translations";
 
 interface Props {
   report: PumStatusReporting;
   initiative: PumInitiative | null;
   readOnly?: boolean;
+  lang: Lang;
 }
 
 function fmtDate(iso?: string): string {
@@ -13,23 +16,23 @@ function fmtDate(iso?: string): string {
   return `${d.getUTCDate()}.${d.getUTCMonth() + 1}.${d.getUTCFullYear()}`;
 }
 
-export function ReportHeader({ report, initiative, readOnly = false }: Props) {
+export function ReportHeader({ report, initiative, readOnly = false, lang }: Props) {
   void readOnly; // reserved for future inline editing in header fields
 
   const rows: { label: string; value: React.ReactNode }[] = [
-    { label: "Date", value: fmtDate(report.pum_statusdate) },
-    { label: "Project Number", value: initiative?.aud_projectno ?? "—" },
+    { label: t("date", lang), value: fmtDate(report.pum_statusdate) },
+    { label: t("projectNumber", lang), value: initiative?.aud_projectno ?? "—" },
     {
-      label: "Project",
+      label: t("project", lang),
       value: initiative?.pum_name ?? "—",
     },
     {
-      label: "Client",
+      label: t("client", lang),
       value: initiative?.aud_customer ?? "—",
     },
-    { label: "Phase", value: report.pum_currentphase ?? "—" },
+    { label: t("phase", lang), value: report.pum_currentphase ?? "—" },
     {
-      label: "Schedule Progress",
+      label: t("scheduleProgress", lang),
       value: report.pum_scheduleprogress != null
         ? `${report.pum_scheduleprogress} %`
         : "—",
@@ -38,7 +41,7 @@ export function ReportHeader({ report, initiative, readOnly = false }: Props) {
 
   return (
     <section className="report-section">
-      <h2 className="report-section__title">Header</h2>
+      <h2 className="report-section__title">{t("projectInformation", lang)}</h2>
       <table className="header-table">
         <tbody>
           {rows.map(({ label, value }) => (

@@ -162,6 +162,10 @@ body {
   flex-wrap: wrap;
 }
 
+.lang-select {
+  min-width: 80px;
+}
+
 .dirty-indicator {
   color: var(--color-warning);
   font-size: 18px;
@@ -509,18 +513,28 @@ body {
   padding: 8px 0;
 }
 
+/* ── PRINT HELPERS ────────────────────────────────────────── */
+.print-only {
+  display: none;
+}
+
 /* ── PRINT STYLES ─────────────────────────────────────────── */
+@page {
+  margin: 10mm;
+}
+
 @media print {
-  /* Hide everything except the report document */
   .no-print,
   .editor-toolbar,
   .error-banner,
   .success-banner,
   .data-source-note,
-  .notes-placeholder,
-  .pm-field__select,
-  select {
+  .notes-placeholder {
     display: none !important;
+  }
+
+  .print-only {
+    display: inline !important;
   }
 
   body {

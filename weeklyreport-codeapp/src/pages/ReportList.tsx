@@ -238,8 +238,8 @@ export function ReportList({ onOpenReport }: Props) {
             </>
           )}
 
-          <ChangesTable changes={changes} />
-          <RisksTable risks={risks} />
+          <ChangesTable changes={changes} lang="en" />
+          <RisksTable risks={risks} lang="en" />
         </section>
       )}
     </div>

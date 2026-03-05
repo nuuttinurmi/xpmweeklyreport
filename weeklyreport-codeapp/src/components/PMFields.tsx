@@ -1,45 +1,50 @@
 import React from "react";
 import type { PumStatusReporting } from "../types/dataverse";
+import type { Lang } from "../i18n/translations";
+import { t } from "../i18n/translations";
 
 interface Props {
   report: PumStatusReporting;
   onFieldChange: (field: keyof PumStatusReporting, value: string | number) => void;
   readOnly?: boolean;
+  lang: Lang;
 }
 
 // KPI option set: 493840000 = Not Set.
 // Other values are set by xPM when PM makes a proposal.
 // hasComment: whether pum_kpinew{key}comment exists on the entity
-const KPI_DIMS: { key: string; label: string; hasComment: boolean }[] = [
-  { key: "resources", label: "Resources", hasComment: true },
-  { key: "summary",   label: "Summary",   hasComment: false }, // no pum_kpinewsummarycomment field
-  { key: "quality",   label: "Quality",   hasComment: true },
-  { key: "cost",      label: "Cost",      hasComment: true },
-  { key: "scope",     label: "Scope",     hasComment: true },
-  { key: "schedule",  label: "Schedule",  hasComment: true },
+type KpiDimKey = "summary" | "resources" | "quality" | "cost" | "scope" | "schedule";
+const KPI_DIMS: { key: KpiDimKey; labelKey: "kpiSummary" | "kpiResources" | "kpiQuality" | "kpiCost" | "kpiScope" | "kpiSchedule"; hasComment: boolean; isSummary?: boolean }[] = [
+  { key: "summary",   labelKey: "kpiSummary",   hasComment: false, isSummary: true },
+  { key: "resources", labelKey: "kpiResources", hasComment: true },
+  { key: "quality",   labelKey: "kpiQuality",   hasComment: true },
+  { key: "cost",      labelKey: "kpiCost",      hasComment: true },
+  { key: "scope",     labelKey: "kpiScope",     hasComment: true },
+  { key: "schedule",  labelKey: "kpiSchedule",  hasComment: true },
 ];
 
-const KPI_OPTIONS: { value: number; label: string }[] = [
-  { value: 493840000, label: "⚪ Not Set" },
-  { value: 493840001, label: "🔴 Need help" },
-  { value: 493840002, label: "🟡 At risk" },
-  { value: 493840003, label: "🟢 No issue" },
+const KPI_OPTION_KEYS: { value: number; icon: string; labelKey: "kpiNotSet" | "kpiNeedHelp" | "kpiAtRisk" | "kpiNoIssue" }[] = [
+  { value: 493840000, icon: "⚪", labelKey: "kpiNotSet" },
+  { value: 493840001, icon: "🔴", labelKey: "kpiNeedHelp" },
+  { value: 493840002, icon: "🟡", labelKey: "kpiAtRisk" },
+  { value: 493840003, icon: "🟢", labelKey: "kpiNoIssue" },
 ];
 const KPI_NOT_SET = 493840000;
 
-function kpiLabel(value?: number): string {
-  if (value == null) return "⚪ Not Set";
-  return KPI_OPTIONS.find((o) => o.value === value)?.label ?? "⚪ Not Set";
+function kpiLabel(value: number | undefined, lang: Lang): string {
+  if (value == null) return `⚪ ${t("kpiNotSet", lang)}`;
+  const opt = KPI_OPTION_KEYS.find((o) => o.value === value);
+  return opt ? `${opt.icon} ${t(opt.labelKey, lang)}` : `⚪ ${t("kpiNotSet", lang)}`;
 }
 
-export function PMFields({ report, onFieldChange, readOnly = false }: Props) {
+export function PMFields({ report, onFieldChange, readOnly = false, lang }: Props) {
   return (
     <section className="report-section">
-      <h2 className="report-section__title">Additional</h2>
+      <h2 className="report-section__title">{t("statusComments", lang)}</h2>
 
       {/* ── Situation comment ── */}
       <div className="pm-field">
-        <label className="pm-field__label">Comment / Situation summary</label>
+        <label className="pm-field__label">{t("commentSummary", lang)}</label>
         {readOnly ? (
           <div className="pm-field__readonly">
             {report.pum_comment || <span className="empty-note">—</span>}
@@ -49,7 +54,7 @@ export function PMFields({ report, onFieldChange, readOnly = false }: Props) {
             className="pm-field__textarea"
             value={report.pum_comment ?? ""}
             onChange={(e) => onFieldChange("pum_comment", e.target.value)}
-            placeholder="Brief description of project status, critical issues, next steps…"
+            placeholder={t("commentPlaceholder", lang)}
             rows={5}
           />
         )}
@@ -57,18 +62,18 @@ export function PMFields({ report, onFieldChange, readOnly = false }: Props) {
 
       {/* ── KPI table ── */}
       <div className="pm-field" style={{ marginTop: "16px" }}>
-        <label className="pm-field__label">KPI Status</label>
+        <label className="pm-field__label">{t("kpiStatus", lang)}</label>
         <table className="data-table" style={{ marginTop: "4px" }}>
           <thead>
             <tr>
-              <th>Dimension</th>
-              <th>Current</th>
-              <th>Proposed</th>
-              <th>Note</th>
+              <th>{t("dimension", lang)}</th>
+              <th>{t("current", lang)}</th>
+              <th>{t("proposed", lang)}</th>
+              <th>{t("note", lang)}</th>
             </tr>
           </thead>
           <tbody>
-            {KPI_DIMS.map(({ key, label, hasComment }) => {
+            {KPI_DIMS.map(({ key, labelKey, hasComment, isSummary }) => {
               const currentField = `pum_kpicurrent${key}` as keyof PumStatusReporting;
               const newField = `pum_kpinew${key}` as keyof PumStatusReporting;
               const commentField = `pum_kpinew${key}comment` as keyof PumStatusReporting;
@@ -78,25 +83,27 @@ export function PMFields({ report, onFieldChange, readOnly = false }: Props) {
                 ? (report[commentField] as string | undefined)
                 : undefined;
               return (
-                <tr key={key}>
-                  <td>{label}</td>
+                <tr key={key} style={isSummary ? { borderBottom: "2px solid #333", fontWeight: "bold" } : undefined}>
+                  <td><strong>{t(labelKey, lang)}</strong></td>
                   <td style={{ color: "#666", fontSize: "0.85em" }}>
-                    {kpiLabel(currentVal)}
+                    {kpiLabel(currentVal, lang)}
                   </td>
                   <td style={{ fontSize: "0.85em" }}>
+                    <span className="print-only">{kpiLabel(newVal, lang)}</span>
                     {readOnly ? (
-                      kpiLabel(newVal)
+                      <span className="no-print">{kpiLabel(newVal, lang)}</span>
                     ) : (
                       <select
                         value={newVal ?? KPI_NOT_SET}
                         onChange={(e) =>
                           onFieldChange(newField, Number(e.target.value))
                         }
-                        className="pm-field__select"
+                        className="pm-field__select no-print"
+                        title={t("proposed", lang)}
                         style={{ fontSize: "0.85em" }}
                       >
-                        {KPI_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
+                        {KPI_OPTION_KEYS.map((o) => (
+                          <option key={o.value} value={o.value}>{o.icon} {t(o.labelKey, lang)}</option>
                         ))}
                       </select>
                     )}
@@ -109,16 +116,21 @@ export function PMFields({ report, onFieldChange, readOnly = false }: Props) {
                         {commentVal || "—"}
                       </span>
                     ) : (
-                      <input
-                        type="text"
-                        className="field-input field-input--inline"
-                        value={commentVal ?? ""}
-                        onChange={(e) =>
-                          onFieldChange(commentField, e.target.value)
-                        }
-                        placeholder="Note…"
-                        style={{ fontSize: "0.85em", width: "100%" }}
-                      />
+                      <>
+                        <span className="print-only" style={{ fontSize: "0.85em" }}>
+                          {commentVal || "—"}
+                        </span>
+                        <input
+                          type="text"
+                          className="field-input field-input--inline no-print"
+                          value={commentVal ?? ""}
+                          onChange={(e) =>
+                            onFieldChange(commentField, e.target.value)
+                          }
+                          placeholder={`${t("note", lang)}…`}
+                          style={{ fontSize: "0.85em", width: "100%" }}
+                        />
+                      </>
                     )}
                   </td>
                 </tr>

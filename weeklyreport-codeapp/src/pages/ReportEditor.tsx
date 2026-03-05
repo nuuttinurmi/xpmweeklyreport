@@ -6,6 +6,8 @@ import { ChangesTable, RisksTable } from "../components/ChangesRisks";
 import { PMFields } from "../components/PMFields";
 import { useWeeklyReport } from "../hooks/useWeeklyReport";
 import { getISOWeek } from "../utils/weekUtils";
+import type { Lang } from "../i18n/translations";
+import { t } from "../i18n/translations";
 
 interface Props {
   reportId: string;
@@ -37,6 +39,7 @@ export function ReportEditor({
     dirty,
   } = useWeeklyReport(reportId, initiativeId);
 
+  const [lang, setLang] = useState<Lang>("en");
   const [triggeringFlow, setTriggeringFlow] = useState(false);
   const [flowError, setFlowError] = useState<string | null>(null);
   const [flowSuccess, setFlowSuccess] = useState(false);
@@ -74,7 +77,7 @@ export function ReportEditor({
     return (
       <div className="page page--loading">
         <div className="loading-spinner" />
-        <p>Loading report…</p>
+        <p>{t("loadingReport", lang)}</p>
       </div>
     );
   }
@@ -98,40 +101,50 @@ export function ReportEditor({
     ? getISOWeek(new Date(report.pum_statusdate))
     : { week: 0, year: 0 };
 
-  const titleLabel = week > 0 ? `Wk ${week}/${year}` : "Status Report";
+  const titleLabel = week > 0 ? `${t("wk", lang)} ${week}/${year}` : t("statusReport", lang);
 
   return (
     <div className="page page--editor">
       {/* ── Toolbar (hidden in print) ── */}
       <div className="editor-toolbar no-print">
         <button className="btn" onClick={onBack}>
-          ← Back
+          &larr; {t("back", lang)}
         </button>
         <div className="editor-toolbar__title">
           {titleLabel}
           {dirty && <span className="dirty-indicator"> ●</span>}
         </div>
         <div className="editor-toolbar__actions">
+          <select
+            className="btn btn--secondary lang-select"
+            value={lang}
+            onChange={(e) => setLang(e.target.value as Lang)}
+            title={t("language", lang)}
+          >
+            <option value="en">EN</option>
+            <option value="fi">FI</option>
+            <option value="sv">SV</option>
+          </select>
           {!isReadOnly && (
             <button
               className="btn btn--secondary"
               onClick={() => save()}
               disabled={saving || !dirty}
             >
-              {saving ? "Saving…" : "Save"}
+              {saving ? t("saving", lang) : t("save", lang)}
             </button>
           )}
           <button className="btn btn--secondary" onClick={handlePrint}>
-            Print / Preview
+            {t("printPreview", lang)}
           </button>
           {powerAutomateFlowUrl && (
             <button
               className="btn btn--primary"
               onClick={handleTriggerFlow}
               disabled={triggeringFlow || dirty}
-              title={dirty ? "Save first" : "Generate PDF to SharePoint"}
+              title={dirty ? t("saveFirst", lang) : t("generatePdf", lang)}
             >
-              {triggeringFlow ? "Generating…" : "Generate PDF →"}
+              {triggeringFlow ? t("generating", lang) : `${t("generatePdf", lang)} →`}
             </button>
           )}
         </div>
@@ -140,32 +153,34 @@ export function ReportEditor({
       {flowError && <div className="error-banner no-print">{flowError}</div>}
       {flowSuccess && (
         <div className="success-banner no-print">
-          PDF generated and saved to SharePoint.
+          {t("pdfSuccess", lang)}
         </div>
       )}
 
       {/* ── Report content ── */}
       <div className="report-document">
-        <h1 className="report-title">WORK PHASE REPORT</h1>
+        <h1 className="report-title">{t("reportTitle", lang)}</h1>
 
         <ReportHeader
           report={report}
           initiative={initiative}
           readOnly={isReadOnly}
+          lang={lang}
         />
 
-        <StaffingTable rows={staffing} weekNumber={week} />
+        <StaffingTable rows={staffing} weekNumber={week} lang={lang} />
 
-        <ScheduleGrid cells={scheduleCells} columns={scheduleColumns} />
+        <ScheduleGrid cells={scheduleCells} columns={scheduleColumns} lang={lang} />
 
         <PMFields
           report={report}
           onFieldChange={updateField}
           readOnly={isReadOnly}
+          lang={lang}
         />
 
-        {isLargeProject && <ChangesTable changes={changes} />}
-        {isLargeProject && <RisksTable risks={risks} />}
+        {isLargeProject && <ChangesTable changes={changes} lang={lang} />}
+        {isLargeProject && <RisksTable risks={risks} lang={lang} />}
       </div>
     </div>
   );
