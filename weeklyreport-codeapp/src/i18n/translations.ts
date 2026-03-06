@@ -23,6 +23,7 @@ const translations = {
   projectNumber: { en: "Project Number", fi: "Projektinumero", sv: "Projektnummer" },
   project: { en: "Project", fi: "Projekti", sv: "Projekt" },
   client: { en: "Client", fi: "Asiakas", sv: "Kund" },
+  projectManager: { en: "Project Manager", fi: "Projektipäällikkö", sv: "Projektledare" },
   phase: { en: "Phase", fi: "Vaihe", sv: "Fas" },
   scheduleProgress: { en: "Schedule Progress", fi: "Aikataulun edistyminen", sv: "Tidplanens framsteg" },
 

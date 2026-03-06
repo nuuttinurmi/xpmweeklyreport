@@ -16,6 +16,7 @@ export interface PumInitiative {
   pum_projecttype?: number; // 493840000 = Small, 493840002 = Large
   aud_projectno?: string;   // Audico custom: project number (join key to ecr_projectportfolio2)
   aud_customer?: string;    // Audico custom: customer name
+  ownerName?: string;       // resolved from _ownerid_value formatted annotation
 }
 
 export const PROJECT_TYPE_SMALL = 493840000;

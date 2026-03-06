@@ -30,6 +30,7 @@ export function ReportHeader({ report, initiative, readOnly = false, lang }: Pro
       label: t("client", lang),
       value: initiative?.aud_customer ?? "—",
     },
+    { label: t("projectManager", lang), value: initiative?.ownerName ?? "—" },
     { label: t("phase", lang), value: report.pum_currentphase ?? "—" },
     {
       label: t("scheduleProgress", lang),

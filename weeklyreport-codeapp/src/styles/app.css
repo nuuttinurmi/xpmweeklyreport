@@ -556,6 +556,8 @@ body {
     background: #fff;
     font-size: 11pt;
     color: #000;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .app, .page, .page--editor {

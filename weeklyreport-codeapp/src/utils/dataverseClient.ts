@@ -187,10 +187,15 @@ export async function fetchAssignmentsWithRoles(
 export async function fetchInitiativeWithType(
   initiativeId: string
 ): Promise<PumInitiative | null> {
-  const select = "$select=pum_initiativeid,pum_name,pum_projecttype,aud_projectno,aud_customer,pum_initiativestart,pum_initiativefinish";
-  return dvFetchOne<PumInitiative>(
+  const select = "$select=pum_initiativeid,pum_name,pum_projecttype,aud_projectno,aud_customer,pum_initiativestart,pum_initiativefinish,_ownerid_value";
+  const raw = await dvFetchOne<Record<string, unknown>>(
     `pum_initiatives(${initiativeId})?${select}`
   );
+  if (!raw) return null;
+  return {
+    ...raw,
+    ownerName: (raw["_ownerid_value@OData.Community.Display.V1.FormattedValue"] as string) ?? undefined,
+  } as PumInitiative;
 }
 
 // ── Initiatives ──────────────────────────────────────────────
