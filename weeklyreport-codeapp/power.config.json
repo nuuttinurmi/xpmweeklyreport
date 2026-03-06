@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "appId": null,
-  "appDisplayName": "Työvaiheilmoitus",
+  "appId": "2c247f3d-0c7b-4316-8686-8d07f5cc6c70",
+  "appDisplayName": "Weekly Report",
   "region": "prod",
   "environmentId": "d00ddc5f-c47a-e101-aaf2-5d6690c59452",
   "description": " ",
