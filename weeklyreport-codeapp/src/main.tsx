@@ -2,8 +2,6 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+// StrictMode is intentionally omitted: it double-invokes effects in dev,
+// which causes MSAL to fire acquireTokenPopup twice simultaneously.
+ReactDOM.createRoot(document.getElementById("root")!).render(<App />);

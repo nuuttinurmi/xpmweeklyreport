@@ -1,4 +1,3 @@
-import React from "react";
 import type { PumStatusReporting, PumInitiative } from "../types/dataverse";
 import type { Lang } from "../i18n/translations";
 import { t } from "../i18n/translations";

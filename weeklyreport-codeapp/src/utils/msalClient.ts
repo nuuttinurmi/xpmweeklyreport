@@ -66,14 +66,12 @@ export function ensureInitialized(): Promise<void> {
 }
 
 const isInIframe = () => window.self !== window.top;
-const isInPopup = () => !!window.opener && window.opener !== window;
 
-export async function getDataverseToken(dataverseUrl: string): Promise<string> {
+export async function getDataverseToken(dataverseUrl: string, loginHint?: string): Promise<string> {
   await ensureInitialized();
 
   const scope = `${dataverseUrl.replace(/\/$/, "")}/.default`;
   const accounts = msalInstance.getAllAccounts();
-
   if (accounts.length > 0) {
     try {
       const result = await msalInstance.acquireTokenSilent({
@@ -83,12 +81,8 @@ export async function getDataverseToken(dataverseUrl: string): Promise<string> {
       return result.accessToken;
     } catch (err) {
       if (err instanceof InteractionRequiredAuthError) {
-        if (isInIframe() || isInPopup()) {
-          throw new Error(
-            "Sessio vanhentunut. Avaa sovellus suoraan osoitteessa http://localhost:3000 " +
-            "kirjautuaksesi uudelleen."
-          );
-        }
+        clearStaleInteraction();
+        checkRedirectLoop();
         await msalInstance.acquireTokenRedirect({ scopes: [scope] });
         return "";
       }
@@ -96,15 +90,25 @@ export async function getDataverseToken(dataverseUrl: string): Promise<string> {
     }
   } else {
     if (isInIframe()) {
-      throw new Error(
-        "Kirjautuminen vaaditaan. Avaa sovellus ensin suoraan osoitteessa " +
-        "http://localhost:3000 kirjautuaksesi sisään."
-      );
-    }
-    if (isInPopup()) {
-      throw new Error(
-        "Sulje tämä ikkuna ja avaa sovellus uudessa välilehdessä osoitteessa http://localhost:3000"
-      );
+      // No cached accounts. Try ssoSilent (works in production Power Apps player where the
+      // user already has an AAD session). If it fails (e.g. local dev), open a popup.
+      // Note: acquireTokenRedirect is blocked in iframes; popup windows are handled via
+      // the early-return in App.tsx so they never reach this code path.
+      try {
+        const result = await msalInstance.ssoSilent({ scopes: [scope], loginHint });
+        return result.accessToken;
+      } catch {
+        // ssoSilent fails in the local play URL (apps.powerapps.com) because:
+        // - Power Apps CSP blocks the AAD hidden iframe (timed_out)
+        // - localStorage is partitioned from the direct-tab session
+        // For local dev, use http://localhost:3000 directly.
+        // In production (deployed app), ssoSilent works because the user is
+        // already authenticated with Power Apps (active AAD session allowed by PA CSP).
+        throw new Error(
+          "Authentication failed inside the Power Apps play URL. " +
+          "For local dev, use http://localhost:3000 directly instead of the play URL."
+        );
+      }
     }
     clearStaleInteraction();
     checkRedirectLoop();

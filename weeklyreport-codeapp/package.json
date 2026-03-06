@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "npx power-apps run",
     "build": "tsc -b && vite build",
+    "build:uat": "tsc -b && vite build --mode uat",
+    "build:prod": "tsc -b && vite build --mode prod",
     "preview": "vite preview",
     "push": "npm run build && npx power-apps push",
     "typecheck": "tsc --noEmit"

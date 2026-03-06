@@ -1,4 +1,3 @@
-import React from "react";
 import type { ScheduleCell } from "../types/dataverse";
 import type { buildScheduleColumns } from "../utils/weekUtils";
 import type { Lang } from "../i18n/translations";
