@@ -21,14 +21,8 @@ export function ReportHeader({ report, initiative, readOnly = false, lang }: Pro
   const rows: { label: string; value: React.ReactNode }[] = [
     { label: t("date", lang), value: fmtDate(report.pum_statusdate) },
     { label: t("projectNumber", lang), value: initiative?.aud_projectno ?? "—" },
-    {
-      label: t("project", lang),
-      value: initiative?.pum_name ?? "—",
-    },
-    {
-      label: t("client", lang),
-      value: initiative?.aud_customer ?? "—",
-    },
+    { label: t("project", lang), value: initiative?.pum_name ?? "—" },
+    { label: t("client", lang), value: initiative?.aud_customer ?? "—" },
     { label: t("projectManager", lang), value: initiative?.ownerName ?? "—" },
     { label: t("phase", lang), value: report.pum_currentphase ?? "—" },
     {
@@ -41,13 +35,15 @@ export function ReportHeader({ report, initiative, readOnly = false, lang }: Pro
 
   return (
     <section className="report-section">
-      <h2 className="report-section__title">{t("projectInformation", lang)}</h2>
-      <table className="header-table">
+      <h2 className="section-title">{t("projectInformation", lang)}</h2>
+      <table className="w-full">
         <tbody>
           {rows.map(({ label, value }) => (
-            <tr key={label}>
-              <th className="header-table__label">{label}</th>
-              <td className="header-table__value">{value}</td>
+            <tr key={label} className="border-b border-audico-light-grey last:border-0">
+              <th className="py-1.5 pr-4 text-sm font-semibold text-audico-dark-grey text-left whitespace-nowrap w-52 align-top">
+                {label}
+              </th>
+              <td className="py-1.5 text-sm text-audico-black">{value}</td>
             </tr>
           ))}
         </tbody>

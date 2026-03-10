@@ -9,6 +9,8 @@ import { getISOWeek } from "../utils/weekUtils";
 import type { Lang } from "../i18n/translations";
 import { t } from "../i18n/translations";
 
+const audicoLogo = "https://cdn.prod.website-files.com/630e4024a1847f1eab9be1e7/67befb8cb45e63df8160f46f_Logga_TvaRader.svg";
+
 interface Props {
   reportId: string;
   initiativeId: string;
@@ -75,18 +77,25 @@ export function ReportEditor({
 
   if (loading) {
     return (
-      <div className="page page--loading">
-        <div className="loading-spinner" />
-        <p>{t("loadingReport", lang)}</p>
+      <div className="min-h-screen bg-audico-light-grey flex flex-col items-center justify-center gap-4">
+        <div className="w-8 h-8 rounded-full border-2 border-audico-mid-grey-3 border-t-[var(--audico-accent)] animate-spin" />
+        <p className="text-sm text-audico-mid-grey-1">{t("loadingReport", lang)}</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="page">
-        <div className="error-banner">{error}</div>
-        <button className="btn" onClick={onBack}>
+      <div className="min-h-screen bg-audico-light-grey p-8">
+        <div className="bg-[#fde7e9] border border-[#f4abaa] text-[#a80000] px-4 py-3 rounded text-sm mb-4">
+          {error}
+        </div>
+        <button
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded
+                     bg-white text-audico-black border border-audico-mid-grey-3
+                     hover:bg-audico-light-grey transition-colors"
+          onClick={onBack}
+        >
           ← Back
         </button>
       </div>
@@ -104,19 +113,27 @@ export function ReportEditor({
   const titleLabel = week > 0 ? `${t("wk", lang)} ${week}/${year}` : t("statusReport", lang);
 
   return (
-    <div className="page page--editor">
-      {/* ── Toolbar (hidden in print) ── */}
-      <div className="editor-toolbar no-print">
-        <button className="btn" onClick={onBack}>
-          &larr; {t("back", lang)}
+    <div className="min-h-screen bg-audico-light-grey">
+      {/* ── Toolbar ── */}
+      <div className="h-12 bg-white border-b border-audico-mid-grey-3 flex items-center gap-3 px-6 print:hidden sticky top-0 z-10">
+        <button
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded
+                     bg-white text-audico-black border border-audico-mid-grey-3
+                     hover:bg-audico-light-grey transition-colors"
+          onClick={onBack}
+        >
+          ← {t("back", lang)}
         </button>
-        <div className="editor-toolbar__title">
+
+        <span className="flex-1 text-base font-semibold text-audico-black truncate">
           {titleLabel}
-          {dirty && <span className="dirty-indicator"> ●</span>}
-        </div>
-        <div className="editor-toolbar__actions">
+          {dirty && <span className="ml-1 text-status-warning">●</span>}
+        </span>
+
+        <div className="flex items-center gap-2">
           <select
-            className="btn btn--secondary lang-select"
+            className="h-8 px-2 text-sm font-semibold text-audico-black bg-white border border-audico-mid-grey-3 rounded
+                       hover:bg-audico-light-grey transition-colors cursor-pointer"
             value={lang}
             onChange={(e) => setLang(e.target.value as Lang)}
             title={t("language", lang)}
@@ -125,21 +142,35 @@ export function ReportEditor({
             <option value="fi">FI</option>
             <option value="sv">SV</option>
           </select>
+
           {!isReadOnly && (
             <button
-              className="btn btn--secondary"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded
+                         bg-white text-audico-black border border-audico-mid-grey-3
+                         hover:bg-audico-light-grey transition-colors
+                         disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => save()}
               disabled={saving || !dirty}
             >
               {saving ? t("saving", lang) : t("save", lang)}
             </button>
           )}
-          <button className="btn btn--secondary" onClick={handlePrint}>
+
+          <button
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded
+                       bg-white text-audico-black border border-audico-mid-grey-3
+                       hover:bg-audico-light-grey transition-colors"
+            onClick={handlePrint}
+          >
             {t("printPreview", lang)}
           </button>
+
           {powerAutomateFlowUrl && (
             <button
-              className="btn btn--primary"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded
+                         bg-[var(--audico-accent)] text-white
+                         hover:bg-[var(--audico-accent-hover)] active:bg-[var(--audico-accent-active)]
+                         transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleTriggerFlow}
               disabled={triggeringFlow || dirty}
               title={dirty ? t("saveFirst", lang) : t("generatePdf", lang)}
@@ -150,40 +181,55 @@ export function ReportEditor({
         </div>
       </div>
 
-      {flowError && <div className="error-banner no-print">{flowError}</div>}
+      {/* Notifications */}
+      {flowError && (
+        <div className="max-w-content mx-auto px-6 pt-4 print:hidden">
+          <div className="bg-[#fde7e9] border border-[#f4abaa] text-[#a80000] px-4 py-3 rounded text-sm">
+            {flowError}
+          </div>
+        </div>
+      )}
       {flowSuccess && (
-        <div className="success-banner no-print">
-          {t("pdfSuccess", lang)}
+        <div className="max-w-content mx-auto px-6 pt-4 print:hidden">
+          <div className="bg-[#dff6dd] border border-[#107c10] text-[#107c10] px-4 py-3 rounded text-sm">
+            {t("pdfSuccess", lang)}
+          </div>
         </div>
       )}
 
-      {/* ── Report content ── */}
-      <div className="report-document">
-        <div className="report-header-row">
-          <img src="/audico-logo.png" alt="Audico" className="report-logo" />
-          <h1 className="report-title">{t("reportTitle", lang)}</h1>
+      {/* ── Report document ── */}
+      <div className="max-w-content mx-auto px-6 py-8">
+        <div className="report-document bg-white rounded-md border border-audico-mid-grey-3 shadow-sm px-10 py-8">
+
+          {/* Report header: logo + title */}
+          <div className="report-header-row flex items-center mb-8 pb-4 border-b-2 border-audico-black">
+            <img src={audicoLogo} alt="Audico" className="report-logo h-9 w-auto" />
+            <h1 className="report-title flex-1 text-xl font-bold text-audico-black text-center uppercase tracking-widest">
+              {t("reportTitle", lang)}
+            </h1>
+          </div>
+
+          <ReportHeader
+            report={report}
+            initiative={initiative}
+            readOnly={isReadOnly}
+            lang={lang}
+          />
+
+          <StaffingTable rows={staffing} weekNumber={week} lang={lang} />
+
+          <ScheduleGrid cells={scheduleCells} columns={scheduleColumns} lang={lang} />
+
+          <PMFields
+            report={report}
+            onFieldChange={updateField}
+            readOnly={isReadOnly}
+            lang={lang}
+          />
+
+          {isLargeProject && <ChangesTable changes={changes} lang={lang} />}
+          {isLargeProject && <RisksTable risks={risks} lang={lang} />}
         </div>
-
-        <ReportHeader
-          report={report}
-          initiative={initiative}
-          readOnly={isReadOnly}
-          lang={lang}
-        />
-
-        <StaffingTable rows={staffing} weekNumber={week} lang={lang} />
-
-        <ScheduleGrid cells={scheduleCells} columns={scheduleColumns} lang={lang} />
-
-        <PMFields
-          report={report}
-          onFieldChange={updateField}
-          readOnly={isReadOnly}
-          lang={lang}
-        />
-
-        {isLargeProject && <ChangesTable changes={changes} lang={lang} />}
-        {isLargeProject && <RisksTable risks={risks} lang={lang} />}
       </div>
     </div>
   );

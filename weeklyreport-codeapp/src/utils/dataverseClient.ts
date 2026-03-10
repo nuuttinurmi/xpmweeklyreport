@@ -23,12 +23,6 @@ import type {
   PumStatusReporting,
 } from "../types/dataverse";
 
-// Kept for call-site compatibility; auth is now handled by the PA runtime.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function initDataverseClient(_baseUrl: string, _getToken: () => Promise<string>): void {
-  // No-op: generated services handle auth automatically.
-}
-
 // ── Assignment rows (flat) ───────────────────────────────────
 
 export interface AssignmentRow {

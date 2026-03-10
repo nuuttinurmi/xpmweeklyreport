@@ -72,10 +72,9 @@ pac code add-data-source -a dataverse -t aud_weeklyreport
 pac code add-data-source -a dataverse -t aud_weeklyreporttasknote
 ```
 
-**Note:** This app uses raw OData calls (dataverseClient.ts) for multi-hop queries that
-the generated services don't support (e.g. gantttask → assignment → resource → role expand chains).
-The generated services are not directly imported in app code, but `pac code add-data-source`
-must still be run so the Power Apps host grants connector permissions at runtime.
+**Note:** All data access goes through the generated services in `src/generated/`.
+`pac code add-data-source` must be run for each table so the Power Apps host grants
+connector permissions at runtime and the typed service files are available.
 
 ---
 
@@ -83,7 +82,7 @@ must still be run so the Power Apps host grants connector permissions at runtime
 
 ```bash
 cp .env.local.example .env.local
-# Edit .env.local with your Dataverse URL and optional PA flow URL
+# Edit .env.local — only VITE_PA_FLOW_URL is needed (leave empty to disable PDF export)
 ```
 
 ---
@@ -101,25 +100,7 @@ Open the **Local Play** URL in the same browser profile logged into your Power P
 
 ---
 
-## Step 7 — Verify Dataverse field names
-
-xPM field names (Work, Actual work, Remaining work on pum_gantttask) may differ
-between xPM versions or environments. Verify the actual logical names:
-
-```bash
-pac code list-tables -a dataverse
-```
-
-Or browse metadata in Power Apps maker portal:
-`make.powerapps.com → Tables → pum_gantttask → Columns`
-
-Update `dataverseClient.ts` if field names differ from:
-- `work` → planned hours
-- `actualwork` → actual hours
-
----
-
-## Step 8 — Deploy to Power Apps
+## Step 7 — Deploy to Power Apps
 
 ```bash
 npm run push

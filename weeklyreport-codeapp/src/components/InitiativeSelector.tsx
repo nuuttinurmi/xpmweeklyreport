@@ -3,7 +3,7 @@ import type { PumInitiative } from "../types/dataverse";
 import { fetchInitiatives } from "../utils/dataverseClient";
 
 interface Props {
-  value: string | null; // selected initiativeId
+  value: string | null;
   onChange: (initiativeId: string, initiative: PumInitiative) => void;
 }
 
@@ -16,12 +16,10 @@ export function InitiativeSelector({ value, onChange }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Initial load
   useEffect(() => {
     loadOptions("");
   }, []);
 
-  // Close on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -61,50 +59,54 @@ export function InitiativeSelector({ value, onChange }: Props) {
   }
 
   return (
-    <div className="initiative-selector" ref={containerRef}>
-      <label className="initiative-selector__label">Project (Initiative)</label>
-      <div className="initiative-selector__input-wrap">
-        {value && !open ? (
-          <button
-            className="initiative-selector__selected"
-            onClick={() => setOpen(true)}
-          >
-            {selectedLabel || "Selected project"}
-            <span className="initiative-selector__change">Change</span>
-          </button>
-        ) : (
-          <input
-            autoFocus={open}
-            type="text"
-            className="initiative-selector__input"
-            value={query}
-            onChange={handleQueryChange}
-            onFocus={() => setOpen(true)}
-            placeholder="Search by project name or number…"
-          />
-        )}
-      </div>
+    <div className="relative max-w-lg" ref={containerRef}>
+      <label className="block text-sm font-semibold text-audico-black mb-1.5">
+        Project (Initiative)
+      </label>
+
+      {value && !open ? (
+        <button
+          className="w-full flex items-center gap-2 h-8 px-3 text-sm text-audico-black
+                     bg-audico-light-grey border border-audico-mid-grey-3 rounded
+                     hover:border-audico-mid-grey-2 transition-colors text-left"
+          onClick={() => setOpen(true)}
+        >
+          <span className="flex-1 truncate">{selectedLabel || "Selected project"}</span>
+          <span className="text-xs text-[var(--audico-accent)] font-semibold shrink-0">Change</span>
+        </button>
+      ) : (
+        <input
+          autoFocus={open}
+          type="text"
+          className="w-full h-8 px-3 text-sm text-audico-black bg-white border border-audico-mid-grey-3 rounded
+                     focus:outline-none focus:border-[var(--audico-accent)] focus:ring-2 focus:ring-[var(--audico-accent)]/20
+                     placeholder:text-audico-mid-grey-2"
+          value={query}
+          onChange={handleQueryChange}
+          onFocus={() => setOpen(true)}
+          placeholder="Search by project name or number…"
+        />
+      )}
+
       {open && (
-        <div className="initiative-selector__dropdown">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-audico-mid-grey-3 rounded shadow-md z-50 max-h-72 overflow-y-auto">
           {loading ? (
-            <div className="initiative-selector__loading">Searching…</div>
+            <div className="px-4 py-3 text-sm text-audico-mid-grey-1">Searching…</div>
           ) : options.length === 0 ? (
-            <div className="initiative-selector__empty">No results</div>
+            <div className="px-4 py-3 text-sm text-audico-mid-grey-1">No results</div>
           ) : (
-            <ul className="initiative-selector__list">
+            <ul>
               {options.map((ini) => (
                 <li
                   key={ini.pum_initiativeid}
-                  className={`initiative-selector__item ${
-                    ini.pum_initiativeid === value
-                      ? "initiative-selector__item--selected"
-                      : ""
-                  }`}
+                  className={`px-4 py-2 text-sm cursor-pointer transition-colors
+                    ${ini.pum_initiativeid === value
+                      ? "bg-[var(--audico-accent-subtle)] text-[var(--audico-accent)] font-semibold"
+                      : "text-audico-black hover:bg-audico-light-grey"
+                    }`}
                   onMouseDown={() => handleSelect(ini)}
                 >
-                  <span className="initiative-selector__item-name">
-                    {ini.pum_name}
-                  </span>
+                  {ini.pum_name}
                 </li>
               ))}
             </ul>

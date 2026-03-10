@@ -23,7 +23,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="app">
+    <div className="min-h-screen bg-audico-light-grey font-sans text-audico-black">
       {view.type === "list" ? (
         <ReportList
           onOpenReport={(reportId, initiativeId) =>
