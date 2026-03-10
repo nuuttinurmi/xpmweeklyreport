@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import type { TaskStatusRow } from "../types/dataverse";
 
 interface Props {
@@ -30,16 +30,16 @@ export function TaskStatusTable({ rows, onNoteChange, readOnly = false }: Props)
 
   return (
     <section className="report-section">
-      <h2 className="report-section__title">Project Status</h2>
+      <h2 className="section-title">Project Status</h2>
       {rows.length === 0 ? (
-        <p className="empty-state">No active tasks.</p>
+        <p className="text-sm text-audico-mid-grey-1 italic">No active tasks.</p>
       ) : (
-        <table className="data-table data-table--tasks">
+        <table className="report-table">
           <thead>
             <tr>
               <th>Task</th>
-              <th>Area</th>
-              <th className="data-table__num">Completion</th>
+              <th className="col-area">Area</th>
+              <th className="col-num">Completion</th>
               <th>Notes</th>
             </tr>
           </thead>
@@ -47,27 +47,24 @@ export function TaskStatusTable({ rows, onNoteChange, readOnly = false }: Props)
             {rows.map((row) => (
               <tr key={row.taskId}>
                 <td>{row.taskName}</td>
-                <td className="data-table__area">{row.area || "—"}</td>
-                <td className="data-table__num">
-                  <span
-                    className={`completion-badge completion-badge--${
-                      row.completionPct === 100
-                        ? "done"
-                        : row.completionPct >= 50
-                        ? "mid"
-                        : "low"
-                    }`}
-                  >
+                <td className="col-area">{row.area || "—"}</td>
+                <td className="col-num">
+                  <span className={
+                    row.completionPct === 100 ? "badge-done"
+                    : row.completionPct >= 50 ? "badge-mid"
+                    : "badge-low"
+                  }>
                     {formatCompletion(row.completionPct)}
                   </span>
                 </td>
-                <td className="data-table__notes">
+                <td>
                   {readOnly ? (
-                    row.notes || <span className="empty-note">—</span>
+                    row.notes || <span className="text-audico-mid-grey-2">—</span>
                   ) : editingId === row.taskId ? (
                     <textarea
                       autoFocus
-                      className="notes-textarea"
+                      className="w-full text-sm text-audico-black font-sans border border-[var(--audico-accent)] rounded px-2 py-1 resize-y
+                                 focus:outline-none focus:ring-2 focus:ring-[var(--audico-accent)]/20"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       onBlur={() => commitEdit(row)}
@@ -87,7 +84,7 @@ export function TaskStatusTable({ rows, onNoteChange, readOnly = false }: Props)
                       title="Click to edit"
                     >
                       {row.notes || (
-                        <span className="notes-placeholder">Add note…</span>
+                        <span className="text-audico-mid-grey-1 italic">Add note…</span>
                       )}
                     </span>
                   )}
@@ -97,10 +94,6 @@ export function TaskStatusTable({ rows, onNoteChange, readOnly = false }: Props)
           </tbody>
         </table>
       )}
-      <p className="data-source-note">
-        Data source: xPM <code>pum_gantttask</code> (Work / Actual work). Automatic.
-        Notes = entered by PM.
-      </p>
     </section>
   );
 }

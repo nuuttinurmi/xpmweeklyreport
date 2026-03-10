@@ -1,123 +1,29 @@
 // ============================================================
-// Dataverse OData client
+// Dataverse service client
 //
-// The Code Apps SDK generated services support single-table CRUD
-// and basic expand, but deep multi-hop queries
-// (gantttask → assignment → resource → role) require raw OData.
-//
-// This module wraps fetch() using the environment base URL from
-// power.config.json, and the bearer token managed by the SDK host.
-//
-// The SDK exposes the current auth token via:
-//   import { PowerApps } from "@microsoft/power-apps";
-//   const token = await PowerApps.getAccessToken();
+// Uses Power Apps SDK Connection References (generated services)
+// for all data access. Authentication is handled entirely by the
+// Power Apps runtime — no MSAL, no bearer tokens, no redirect URIs.
 // ============================================================
 
+import {
+  Pum_initiativesService,
+  Pum_gantttasksService,
+  Pum_assignmentsService,
+  Pum_resourcesService,
+  Pum_changerequestsService,
+  Pum_risksService,
+  Pum_statusreportingsService,
+} from "../generated";
 import type {
   PumInitiative,
   PumGanttTask,
   PumChangeRequest,
   PumRisk,
-  EcrProjectPortfolio2,
-  AudWeeklyReport,
-  AudWeeklyReportTaskNote,
   PumStatusReporting,
 } from "../types/dataverse";
 
-// Injected at init time from power.config.json / SDK
-let _baseUrl = ""; // e.g. "https://org.crm.dynamics.com"
-let _getToken: () => Promise<string> = async () => "";
-
-export function initDataverseClient(
-  baseUrl: string,
-  getToken: () => Promise<string>
-) {
-  _baseUrl = baseUrl.replace(/\/$/, "");
-  _getToken = getToken;
-}
-
-async function dvFetch<T>(path: string): Promise<T[]> {
-  const token = await _getToken();
-  const url = `${_baseUrl}/api/data/v9.2/${path}`;
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      "OData-MaxVersion": "4.0",
-      "OData-Version": "4.0",
-      Prefer: "odata.include-annotations=OData.Community.Display.V1.FormattedValue",
-    },
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Dataverse OData error ${res.status}: ${text}`);
-  }
-  const json = await res.json();
-  return json.value ?? [];
-}
-
-async function dvFetchOne<T>(path: string): Promise<T | null> {
-  const token = await _getToken();
-  const url = `${_baseUrl}/api/data/v9.2/${path}`;
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      "OData-MaxVersion": "4.0",
-      "OData-Version": "4.0",
-      Prefer: "odata.include-annotations=OData.Community.Display.V1.FormattedValue",
-    },
-  });
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Dataverse OData error ${res.status}: ${text}`);
-  }
-  return res.json() as Promise<T>;
-}
-
-async function dvPost<T>(path: string, body: object): Promise<T> {
-  const token = await _getToken();
-  const url = `${_baseUrl}/api/data/v9.2/${path}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "OData-MaxVersion": "4.0",
-      "OData-Version": "4.0",
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok && res.status !== 204) {
-    const text = await res.text();
-    throw new Error(`Dataverse POST error ${res.status}: ${text}`);
-  }
-  if (res.status === 204) return {} as T;
-  return res.json();
-}
-
-async function dvPatch(path: string, body: object): Promise<void> {
-  const token = await _getToken();
-  const url = `${_baseUrl}/api/data/v9.2/${path}`;
-  const res = await fetch(url, {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "OData-MaxVersion": "4.0",
-      "OData-Version": "4.0",
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Dataverse PATCH error ${res.status}: ${text}`);
-  }
-}
-
-// ── Assignment rows (flat, no expand needed) ─────────────────
+// ── Assignment rows (flat) ───────────────────────────────────
 
 export interface AssignmentRow {
   pum_assignmentid: string;
@@ -131,24 +37,29 @@ export interface AssignmentRow {
 export async function fetchAssignmentsForInitiative(
   initiativeId: string
 ): Promise<AssignmentRow[]> {
-  const filter = `$filter=_pum_initiative_value eq '${initiativeId}' and statecode eq 0`;
-  const select =
-    "$select=pum_assignmentid,_pum_asstask_value,_pum_resource_value,pum_taskname,pum_assignmentwork,pum_assignmentactualwork";
-  const raw = await dvFetch<Record<string, unknown>>(
-    `pum_assignments?${select}&${filter}`
-  );
-  return raw.map((r) => ({
-    pum_assignmentid: r.pum_assignmentid as string,
-    taskId: (r["_pum_asstask_value"] as string) ?? "",
-    resourceName:
-      (r["_pum_resource_value@OData.Community.Display.V1.FormattedValue"] as string) ?? "—",
-    taskName: (r.pum_taskname as string) ?? "—",
-    plannedHours: (r.pum_assignmentwork as number) ?? 0,
-    actualHours: (r.pum_assignmentactualwork as number) ?? 0,
+  const result = await Pum_assignmentsService.getAll({
+    filter: `_pum_initiative_value eq '${initiativeId}' and statecode eq 0`,
+    select: [
+      "pum_assignmentid",
+      "_pum_asstask_value",
+      "_pum_resource_value",
+      "pum_taskname",
+      "pum_assignmentwork",
+      "pum_assignmentactualwork",
+    ],
+  });
+  return (result.data ?? []).map((r) => ({
+    pum_assignmentid: r.pum_assignmentid,
+    taskId: r._pum_asstask_value ?? "",
+    // pum_resourcename is the denormalized display name returned with annotations
+    resourceName: (r as unknown as Record<string, string>).pum_resourcename ?? "—",
+    taskName: r.pum_taskname ?? "—",
+    plannedHours: Number(r.pum_assignmentwork ?? 0),
+    actualHours: Number(r.pum_assignmentactualwork ?? 0),
   }));
 }
 
-// ── Assignments with resource + role expand (for staffing) ───
+// ── Assignments with resource + role (for staffing) ──────────
 
 export interface StaffingAssignment {
   pum_assignmentid: string;
@@ -162,22 +73,58 @@ export interface StaffingAssignment {
 export async function fetchAssignmentsWithRoles(
   initiativeId: string
 ): Promise<StaffingAssignment[]> {
-  const filter = `$filter=_pum_initiative_value eq '${initiativeId}' and statecode eq 0`;
-  const select = "$select=pum_assignmentid,_pum_asstask_value";
-  const expand = "$expand=pum_Resource($select=pum_resourceid,pum_name,pum_resourcetype;$expand=pum_Role($select=pum_roleid,pum_name))";
-  const raw = await dvFetch<Record<string, unknown>>(
-    `pum_assignments?${select}&${filter}&${expand}`
-  );
-  return raw.map((r) => {
-    const resource = r.pum_Resource as Record<string, unknown> | null;
-    const role = resource?.pum_Role as Record<string, unknown> | null;
+  // Step 1: get assignments
+  const assignRes = await Pum_assignmentsService.getAll({
+    filter: `_pum_initiative_value eq '${initiativeId}' and statecode eq 0`,
+    select: ["pum_assignmentid", "_pum_asstask_value", "_pum_resource_value"],
+  });
+  const assignments = assignRes.data ?? [];
+
+  // Step 2: collect unique resource IDs
+  const resourceIds = [
+    ...new Set(
+      assignments
+        .map((a) => a._pum_resource_value)
+        .filter((id): id is string => !!id)
+    ),
+  ];
+
+  // Step 3: fetch resource records (name, type, role name)
+  const resourceMap = new Map<
+    string,
+    { name: string; type: string; roleName: string }
+  >();
+  if (resourceIds.length > 0) {
+    const resFilter = resourceIds
+      .map((id) => `pum_resourceid eq '${id}'`)
+      .join(" or ");
+    const resRes = await Pum_resourcesService.getAll({
+      filter: resFilter,
+      select: ["pum_resourceid", "pum_name", "pum_resourcetype", "_pum_role_value"],
+    });
+    for (const r of resRes.data ?? []) {
+      resourceMap.set(r.pum_resourceid, {
+        name: r.pum_name,
+        // pum_resourcetype is a numeric option set key (e.g. 493840000 = Named)
+        type: String(r.pum_resourcetype ?? ""),
+        // pum_rolename is the display name of the Role lookup, returned with annotations
+        roleName: (r as unknown as Record<string, string>).pum_rolename ?? "Muu",
+      });
+    }
+  }
+
+  // Step 4: join
+  return assignments.map((a) => {
+    const res = a._pum_resource_value
+      ? resourceMap.get(a._pum_resource_value)
+      : undefined;
     return {
-      pum_assignmentid: r.pum_assignmentid as string,
-      taskId: (r["_pum_asstask_value"] as string) ?? "",
-      resourceId: (resource?.pum_resourceid as string) ?? "",
-      resourceName: (resource?.pum_name as string) ?? "—",
-      resourceType: (resource?.pum_resourcetype as string) ?? "",
-      roleName: (role?.pum_name as string) ?? "Muu",
+      pum_assignmentid: a.pum_assignmentid,
+      taskId: a._pum_asstask_value ?? "",
+      resourceId: a._pum_resource_value ?? "",
+      resourceName: res?.name ?? "—",
+      resourceType: res?.type ?? "",
+      roleName: res?.roleName ?? "Muu",
     };
   });
 }
@@ -187,77 +134,99 @@ export async function fetchAssignmentsWithRoles(
 export async function fetchInitiativeWithType(
   initiativeId: string
 ): Promise<PumInitiative | null> {
-  const select = "$select=pum_initiativeid,pum_name,pum_projecttype,aud_projectno,aud_customer,pum_initiativestart,pum_initiativefinish,_ownerid_value";
-  const raw = await dvFetchOne<Record<string, unknown>>(
-    `pum_initiatives(${initiativeId})?${select}`
-  );
-  if (!raw) return null;
+  const result = await Pum_initiativesService.get(initiativeId, {
+    select: [
+      "pum_initiativeid",
+      "pum_name",
+      "pum_projecttype",
+      "aud_projectno",
+      "aud_customer",
+      "pum_initiativestart",
+      "pum_initiativefinish",
+      // Include owner lookup so owneridname annotation is returned
+      "_ownerid_value",
+    ],
+  });
+  const r = result.data;
+  if (!r) return null;
   return {
-    ...raw,
-    ownerName: (raw["_ownerid_value@OData.Community.Display.V1.FormattedValue"] as string) ?? undefined,
-  } as PumInitiative;
+    pum_initiativeid: r.pum_initiativeid,
+    pum_name: r.pum_name,
+    // pum_projecttype is a numeric option set key — compatible with number
+    pum_projecttype: r.pum_projecttype as unknown as number | undefined,
+    aud_projectno: r.aud_projectno,
+    aud_customer: r.aud_customer,
+    pum_initiativestart: r.pum_initiativestart,
+    pum_initiativefinish: r.pum_initiativefinish,
+    // owneridname is the display name of the owner, returned with include-annotations=*
+    ownerName: r.owneridname ?? undefined,
+  };
 }
 
 // ── Initiatives ──────────────────────────────────────────────
 
 export async function fetchInitiatives(search?: string): Promise<PumInitiative[]> {
-  let filter = "";
-  if (search) {
-    const escaped = search.replace(/'/g, "''");
-    filter = `&$filter=contains(pum_name,'${escaped}')`;
-  }
-  const select = "$select=pum_initiativeid,pum_name";
-  return dvFetch<PumInitiative>(`pum_initiatives?${select}${filter}&$orderby=pum_name asc&$top=100`);
+  const filter = search
+    ? `contains(pum_name,'${search.replace(/'/g, "''")}')`
+    : undefined;
+  const result = await Pum_initiativesService.getAll({
+    select: ["pum_initiativeid", "pum_name"],
+    filter,
+    orderBy: ["pum_name asc"],
+    top: 100,
+  });
+  return (result.data ?? []).map((r) => ({
+    pum_initiativeid: r.pum_initiativeid,
+    pum_name: r.pum_name,
+  }));
 }
 
-// ── Project portfolio (Dynamics) ─────────────────────────────
-
-export async function fetchProjectByNumber(
-  projectNumber: string
-): Promise<EcrProjectPortfolio2 | null> {
-  const escaped = projectNumber.replace(/'/g, "''");
-  const select = "$select=ecr_projectportfolio2id,ecr_projectnumber,ecr_name,ecr_projectmanager,aud_agreement,ecr_startdate,ecr_enddate";
-  const expand = "$expand=ecr_customerid_account($select=name),ecr_contactid_contact($select=fullname)";
-  const filter = `$filter=ecr_projectnumber eq '${escaped}'`;
-  const results = await dvFetch<EcrProjectPortfolio2>(
-    `ecr_projectportfolio2s?${select}&${expand}&${filter}&$top=1`
-  );
-  return results[0] ?? null;
-}
-
-// ── Gantt tasks with full expand chain ──────────────────────
+// ── Gantt tasks ──────────────────────────────────────────────
 
 export async function fetchGanttTasksWithStaffing(
   initiativeId: string,
   weekStart: string,
   weekEnd: string
 ): Promise<PumGanttTask[]> {
-  // Date filter: tasks that overlap the target week
-  const filter = `$filter=_pum_initiative_value eq '${initiativeId}' and pum_startdate le ${weekEnd}T23:59:59Z and pum_enddate ge ${weekStart}T00:00:00Z`;
-  const select = "$select=pum_gantttaskid,pum_name,pum_startdate,pum_enddate,pum_wbs,pum_duration";
-  // Assignment expand disabled until navigation property names are confirmed
-  return dvFetch<PumGanttTask>(`pum_gantttasks?${select}&${filter}`);
+  const result = await Pum_gantttasksService.getAll({
+    filter:
+      `_pum_initiative_value eq '${initiativeId}'` +
+      ` and pum_startdate le ${weekEnd}T23:59:59Z` +
+      ` and pum_enddate ge ${weekStart}T00:00:00Z`,
+    select: [
+      "pum_gantttaskid",
+      "pum_name",
+      "pum_startdate",
+      "pum_enddate",
+      "pum_wbs",
+      "pum_duration",
+    ],
+  });
+  return (result.data ?? []) as unknown as PumGanttTask[];
 }
 
-/** Fetch all tasks for an initiative (for schedule grid, task status) */
 export async function fetchAllGanttTasks(
   initiativeId: string,
   gridStart: string,
   gridEnd: string
 ): Promise<PumGanttTask[]> {
-  const filter = `$filter=_pum_initiative_value eq '${initiativeId}' and pum_startdate le ${gridEnd}T23:59:59Z and pum_enddate ge ${gridStart}T00:00:00Z`;
-  const select = "$select=pum_gantttaskid,pum_name,pum_startdate,pum_enddate,pum_wbs,pum_duration,pum_tasktype";
-  return dvFetch<PumGanttTask>(`pum_gantttasks?${select}&${filter}&$orderby=pum_wbs asc`);
-}
-
-/** Fetch tasks with Work/ActualWork for completion % */
-export async function fetchTasksWithWork(
-  initiativeId: string
-): Promise<PumGanttTask[]> {
-  const filter = `$filter=_pum_initiative_value eq '${initiativeId}' and statecode eq 0`;
-  const select = "$select=pum_gantttaskid,pum_name,pum_wbs,pum_startdate,pum_enddate,pum_tasktype";
-  // Note: Work/ActualWork field names may vary per xPM version — confirm with pac code list-tables
-  return dvFetch<PumGanttTask>(`pum_gantttasks?${select}&${filter}&$orderby=pum_wbs asc`);
+  const result = await Pum_gantttasksService.getAll({
+    filter:
+      `_pum_initiative_value eq '${initiativeId}'` +
+      ` and pum_startdate le ${gridEnd}T23:59:59Z` +
+      ` and pum_enddate ge ${gridStart}T00:00:00Z`,
+    select: [
+      "pum_gantttaskid",
+      "pum_name",
+      "pum_startdate",
+      "pum_enddate",
+      "pum_wbs",
+      "pum_duration",
+      "pum_tasktype",
+    ],
+    orderBy: ["pum_wbs asc"],
+  });
+  return (result.data ?? []) as unknown as PumGanttTask[];
 }
 
 // ── Change requests ──────────────────────────────────────────
@@ -265,122 +234,96 @@ export async function fetchTasksWithWork(
 export async function fetchChangeRequests(
   initiativeId: string
 ): Promise<PumChangeRequest[]> {
-  const filter = `$filter=_pum_initiative_value eq '${initiativeId}'`;
-  const select = "$select=pum_changerequestid,pum_name,pum_description,statuscode";
-  return dvFetch<PumChangeRequest>(`pum_changerequests?${select}&${filter}&$orderby=createdon desc`);
+  const result = await Pum_changerequestsService.getAll({
+    filter: `_pum_initiative_value eq '${initiativeId}'`,
+    select: ["pum_changerequestid", "pum_name", "pum_description", "statuscode"],
+    orderBy: ["createdon desc"],
+  });
+  return (result.data ?? []) as unknown as PumChangeRequest[];
 }
 
 // ── Risks ────────────────────────────────────────────────────
 
 export async function fetchRisks(initiativeId: string): Promise<PumRisk[]> {
-  const filter = `$filter=_pum_initiative_value eq '${initiativeId}' and statecode eq 0`;
-  const select = "$select=pum_riskid,pum_name,pum_riskdescription,pum_riskimpact,pum_probability,pum_riskstatus";
-  return dvFetch<PumRisk>(`pum_risks?${select}&${filter}&$orderby=pum_riskimpact desc`);
+  const result = await Pum_risksService.getAll({
+    filter: `_pum_initiative_value eq '${initiativeId}' and statecode eq 0`,
+    select: [
+      "pum_riskid",
+      "pum_name",
+      "pum_riskdescription",
+      "pum_riskimpact",
+      "pum_probability",
+      "pum_riskstatus",
+    ],
+    orderBy: ["pum_riskimpact desc"],
+  });
+  return (result.data ?? []) as unknown as PumRisk[];
 }
 
 // ── StatusReporting CRUD ─────────────────────────────────────
-// Uses existing xPM entity pum_statusreporting (collection: pum_statusreportings)
 
-const STATUS_REPORT_SELECT =
-  "$select=pum_statusreportingid,pum_statusdate,pum_comment,pum_statuscategory,statecode," +
-  "pum_currentphase,pum_scheduleprogress,pum_actualcost,pum_budget," +
-  "pum_kpicurrentresources,pum_kpicurrentsummary,pum_kpicurrentquality," +
-  "pum_kpicurrentcost,pum_kpicurrentscope,pum_kpicurrentschedule," +
-  "pum_kpinewresources,pum_kpinewsummary,pum_kpinewquality," +
-  "pum_kpinewcost,pum_kpinewscope,pum_kpinewschedule," +
-  "pum_kpinewresourcescomment,pum_kpinewqualitycomment," +
-  "pum_kpinewcostcomment,pum_kpinewscopecomment,pum_kpinewschedulecomment," +
-  "_pum_initiative_value";
+const STATUS_REPORT_FIELDS = [
+  "pum_statusreportingid",
+  "pum_statusdate",
+  "pum_comment",
+  "pum_statuscategory",
+  "statecode",
+  "pum_currentphase",
+  "pum_scheduleprogress",
+  "pum_actualcost",
+  "pum_budget",
+  "pum_kpicurrentresources",
+  "pum_kpicurrentsummary",
+  "pum_kpicurrentquality",
+  "pum_kpicurrentcost",
+  "pum_kpicurrentscope",
+  "pum_kpicurrentschedule",
+  "pum_kpinewresources",
+  "pum_kpinewsummary",
+  "pum_kpinewquality",
+  "pum_kpinewcost",
+  "pum_kpinewscope",
+  "pum_kpinewschedule",
+  "pum_kpinewresourcescomment",
+  "pum_kpinewqualitycomment",
+  "pum_kpinewcostcomment",
+  "pum_kpinewscopecomment",
+  "pum_kpinewschedulecomment",
+  "_pum_initiative_value",
+];
 
 export async function fetchStatusReports(
   initiativeId: string
 ): Promise<PumStatusReporting[]> {
-  const filter = `$filter=_pum_initiative_value eq '${initiativeId}' and statecode eq 0`;
-  return dvFetch<PumStatusReporting>(
-    `pum_statusreportings?${STATUS_REPORT_SELECT}&${filter}&$orderby=pum_statusdate desc`
-  );
+  const result = await Pum_statusreportingsService.getAll({
+    filter: `_pum_initiative_value eq '${initiativeId}' and statecode eq 0`,
+    select: STATUS_REPORT_FIELDS,
+    orderBy: ["pum_statusdate desc"],
+  });
+  return (result.data ?? []) as unknown as PumStatusReporting[];
 }
 
 export async function fetchStatusReport(
   reportId: string
 ): Promise<PumStatusReporting | null> {
-  return dvFetchOne<PumStatusReporting>(
-    `pum_statusreportings(${reportId})?${STATUS_REPORT_SELECT}`
-  );
+  const result = await Pum_statusreportingsService.get(reportId, {
+    select: STATUS_REPORT_FIELDS,
+  });
+  return (result.data ?? null) as unknown as PumStatusReporting | null;
 }
 
 export async function createStatusReport(
   data: Partial<PumStatusReporting> & { "pum_Initiative@odata.bind": string }
 ): Promise<PumStatusReporting> {
-  return dvPost<PumStatusReporting>("pum_statusreportings", data);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result = await Pum_statusreportingsService.create(data as any);
+  return (result.data ?? {}) as unknown as PumStatusReporting;
 }
 
 export async function updateStatusReport(
   reportId: string,
   data: Partial<PumStatusReporting>
 ): Promise<void> {
-  return dvPatch(`pum_statusreportings(${reportId})`, data);
-}
-
-// ── WeeklyReport CRUD ────────────────────────────────────────
-
-export async function fetchWeeklyReports(
-  initiativeId: string
-): Promise<AudWeeklyReport[]> {
-  const filter = `$filter=_aud_initiative_value eq '${initiativeId}'`;
-  const select = "$select=aud_weeklyreportid,aud_weeknumber,aud_year,aud_status,aud_outputfileurl,createdon";
-  return dvFetch<AudWeeklyReport>(
-    `aud_weeklyreports?${select}&${filter}&$orderby=aud_year desc,aud_weeknumber desc`
-  );
-}
-
-export async function fetchWeeklyReport(
-  reportId: string
-): Promise<AudWeeklyReport | null> {
-  const select = "$select=aud_weeklyreportid,aud_weeknumber,aud_year,aud_status,aud_actionitems,aud_safetynotes,aud_situationsummary,aud_additionalinfo,aud_outputfileurl";
-  return dvFetchOne<AudWeeklyReport>(`aud_weeklyreports(${reportId})?${select}`);
-}
-
-export async function createWeeklyReport(
-  data: Omit<AudWeeklyReport, "aud_weeklyreportid">
-): Promise<AudWeeklyReport> {
-  return dvPost<AudWeeklyReport>("aud_weeklyreports", data);
-}
-
-export async function updateWeeklyReport(
-  reportId: string,
-  data: Partial<AudWeeklyReport>
-): Promise<void> {
-  return dvPatch(`aud_weeklyreports(${reportId})`, data);
-}
-
-// ── TaskNotes CRUD ────────────────────────────────────────────
-
-export async function fetchTaskNotes(
-  reportId: string
-): Promise<AudWeeklyReportTaskNote[]> {
-  const filter = `$filter=_aud_weeklyreport_value eq '${reportId}'`;
-  const select = "$select=aud_weeklyreporttasknoteid,aud_notes,_aud_gantttask_value";
-  const expand = "$expand=aud_gantttask($select=pum_gantttaskid,pum_name,pum_wbs)";
-  return dvFetch<AudWeeklyReportTaskNote>(
-    `aud_weeklyreporttasknotes?${select}&${filter}&${expand}`
-  );
-}
-
-export async function upsertTaskNote(
-  noteId: string | undefined,
-  reportId: string,
-  taskId: string,
-  notes: string
-): Promise<void> {
-  const body: Record<string, unknown> = {
-    aud_notes: notes,
-    "aud_weeklyreport@odata.bind": `/aud_weeklyreports(${reportId})`,
-    "aud_gantttask@odata.bind": `/pum_gantttasks(${taskId})`,
-  };
-  if (noteId) {
-    await dvPatch(`aud_weeklyreporttasknotes(${noteId})`, { aud_notes: notes });
-  } else {
-    await dvPost("aud_weeklyreporttasknotes", body);
-  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await Pum_statusreportingsService.update(reportId, data as any);
 }

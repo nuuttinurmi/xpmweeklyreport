@@ -1,4 +1,3 @@
-import React from "react";
 import type { PumStatusReporting } from "../types/dataverse";
 import type { Lang } from "../i18n/translations";
 import { t } from "../i18n/translations";
@@ -10,9 +9,6 @@ interface Props {
   lang: Lang;
 }
 
-// KPI option set: 493840000 = Not Set.
-// Other values are set by xPM when PM makes a proposal.
-// hasComment: whether pum_kpinew{key}comment exists on the entity
 type KpiDimKey = "summary" | "resources" | "quality" | "cost" | "scope" | "schedule";
 const KPI_DIMS: { key: KpiDimKey; labelKey: "kpiSummary" | "kpiResources" | "kpiQuality" | "kpiCost" | "kpiScope" | "kpiSchedule"; hasComment: boolean; isSummary?: boolean }[] = [
   { key: "summary",   labelKey: "kpiSummary",   hasComment: false, isSummary: true },
@@ -40,18 +36,22 @@ function kpiLabel(value: number | undefined, lang: Lang): string {
 export function PMFields({ report, onFieldChange, readOnly = false, lang }: Props) {
   return (
     <section className="report-section">
-      <h2 className="report-section__title">{t("statusComments", lang)}</h2>
+      <h2 className="section-title">{t("statusComments", lang)}</h2>
 
-      {/* ── Situation comment ── */}
-      <div className="pm-field">
-        <label className="pm-field__label">{t("commentSummary", lang)}</label>
+      {/* Situation comment */}
+      <div className="mb-5">
+        <label className="block text-sm font-semibold text-audico-black mb-1.5">
+          {t("commentSummary", lang)}
+        </label>
         {readOnly ? (
-          <div className="pm-field__readonly">
-            {report.pum_comment || <span className="empty-note">—</span>}
+          <div className="text-sm text-audico-black bg-audico-light-grey border border-audico-mid-grey-3 rounded px-3 py-2 whitespace-pre-wrap min-h-[60px]">
+            {report.pum_comment || <span className="text-audico-mid-grey-1">—</span>}
           </div>
         ) : (
           <textarea
-            className="pm-field__textarea"
+            className="w-full text-sm text-audico-black font-sans bg-white border border-audico-mid-grey-3 rounded px-3 py-2 resize-y
+                       focus:outline-none focus:border-[var(--audico-accent)] focus:ring-2 focus:ring-[var(--audico-accent)]/20
+                       placeholder:text-audico-mid-grey-2"
             value={report.pum_comment ?? ""}
             onChange={(e) => onFieldChange("pum_comment", e.target.value)}
             placeholder={t("commentPlaceholder", lang)}
@@ -60,15 +60,17 @@ export function PMFields({ report, onFieldChange, readOnly = false, lang }: Prop
         )}
       </div>
 
-      {/* ── KPI table ── */}
-      <div className="pm-field" style={{ marginTop: "16px" }}>
-        <label className="pm-field__label">{t("kpiStatus", lang)}</label>
-        <table className="data-table" style={{ marginTop: "4px" }}>
+      {/* KPI table */}
+      <div>
+        <label className="block text-sm font-semibold text-audico-black mb-1.5">
+          {t("kpiStatus", lang)}
+        </label>
+        <table className="report-table">
           <thead>
             <tr>
               <th>{t("dimension", lang)}</th>
-              <th>{t("current", lang)}</th>
-              <th>{t("proposed", lang)}</th>
+              <th className="w-36">{t("current", lang)}</th>
+              <th className="w-40">{t("proposed", lang)}</th>
               <th>{t("note", lang)}</th>
             </tr>
           </thead>
@@ -83,24 +85,23 @@ export function PMFields({ report, onFieldChange, readOnly = false, lang }: Prop
                 ? (report[commentField] as string | undefined)
                 : undefined;
               return (
-                <tr key={key} style={isSummary ? { borderBottom: "2px solid #333", fontWeight: "bold" } : undefined}>
+                <tr
+                  key={key}
+                  className={isSummary ? "border-b-2 border-audico-dark-grey font-semibold" : undefined}
+                >
                   <td><strong>{t(labelKey, lang)}</strong></td>
-                  <td style={{ color: "#666", fontSize: "0.85em" }}>
-                    {kpiLabel(currentVal, lang)}
-                  </td>
-                  <td style={{ fontSize: "0.85em" }}>
-                    <span className="print-only">{kpiLabel(newVal, lang)}</span>
+                  <td className="text-audico-mid-grey-1 text-xs">{kpiLabel(currentVal, lang)}</td>
+                  <td className="text-xs">
+                    <span className="hidden print:inline">{kpiLabel(newVal, lang)}</span>
                     {readOnly ? (
-                      <span className="no-print">{kpiLabel(newVal, lang)}</span>
+                      <span className="print:hidden">{kpiLabel(newVal, lang)}</span>
                     ) : (
                       <select
                         value={newVal ?? KPI_NOT_SET}
-                        onChange={(e) =>
-                          onFieldChange(newField, Number(e.target.value))
-                        }
-                        className="pm-field__select no-print"
+                        onChange={(e) => onFieldChange(newField, Number(e.target.value))}
+                        className="print:hidden h-7 px-1.5 text-xs font-sans text-audico-black bg-white border border-audico-mid-grey-3 rounded
+                                   focus:outline-none focus:border-[var(--audico-accent)]"
                         title={t("proposed", lang)}
-                        style={{ fontSize: "0.85em" }}
                       >
                         {KPI_OPTION_KEYS.map((o) => (
                           <option key={o.value} value={o.value}>{o.icon} {t(o.labelKey, lang)}</option>
@@ -110,25 +111,20 @@ export function PMFields({ report, onFieldChange, readOnly = false, lang }: Prop
                   </td>
                   <td>
                     {!hasComment ? (
-                      <span style={{ fontSize: "0.85em", color: "#aaa" }}>—</span>
+                      <span className="text-xs text-audico-mid-grey-2">—</span>
                     ) : readOnly ? (
-                      <span style={{ fontSize: "0.85em", color: "#666" }}>
-                        {commentVal || "—"}
-                      </span>
+                      <span className="text-xs text-audico-dark-grey">{commentVal || "—"}</span>
                     ) : (
                       <>
-                        <span className="print-only" style={{ fontSize: "0.85em" }}>
-                          {commentVal || "—"}
-                        </span>
+                        <span className="hidden print:inline text-xs">{commentVal || "—"}</span>
                         <input
                           type="text"
-                          className="field-input field-input--inline no-print"
+                          className="print:hidden w-full h-7 px-2 text-xs font-sans text-audico-black bg-white border border-audico-mid-grey-3 rounded
+                                     focus:outline-none focus:border-[var(--audico-accent)]
+                                     placeholder:text-audico-mid-grey-2"
                           value={commentVal ?? ""}
-                          onChange={(e) =>
-                            onFieldChange(commentField, e.target.value)
-                          }
+                          onChange={(e) => onFieldChange(commentField, e.target.value)}
                           placeholder={`${t("note", lang)}…`}
-                          style={{ fontSize: "0.85em", width: "100%" }}
                         />
                       </>
                     )}

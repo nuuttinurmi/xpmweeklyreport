@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "appId": "2c247f3d-0c7b-4316-8686-8d07f5cc6c70",
+  "appDisplayName": "Weekly Report",
+  "region": "prod",
+  "environmentId": "d00ddc5f-c47a-e101-aaf2-5d6690c59452",
+  "description": " ",
+  "buildPath": "./dist",
+  "buildEntryPoint": "index.html",
+  "localAppUrl": "http://localhost:3000",
+  "logoPath": "Default",
+  "connectionReferences": {},
+  "databaseReferences": {
+    "default.cds": {
+      "dataSources": {
+        "initiatives": {
+          "entitySetName": "pum_initiatives",
+          "logicalName": "pum_initiative"
+        },
+        "gantttasks": {
+          "entitySetName": "pum_gantttasks",
+          "logicalName": "pum_gantttask"
+        },
+        "assignments": {
+          "entitySetName": "pum_assignments",
+          "logicalName": "pum_assignment"
+        },
+        "resources": {
+          "entitySetName": "pum_resources",
+          "logicalName": "pum_resource"
+        },
+        "roles": {
+          "entitySetName": "pum_roles",
+          "logicalName": "pum_role"
+        },
+        "changerequests": {
+          "entitySetName": "pum_changerequests",
+          "logicalName": "pum_changerequest"
+        },
+        "risks": {
+          "entitySetName": "pum_risks",
+          "logicalName": "pum_risk"
+        },
+        "accounts": {
+          "entitySetName": "accounts",
+          "logicalName": "account"
+        },
+        "contacts": {
+          "entitySetName": "contacts",
+          "logicalName": "contact"
+        },
+        "statusreporting": {
+          "entitySetName": "pum_statusreportings",
+          "logicalName": "pum_statusreporting"
+        }
+      },
+      "environmentVariableName": ""
+    }
+  }
+}

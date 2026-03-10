@@ -19,6 +19,8 @@ import {
 } from "../utils/dataverseClient";
 import { toISODateString } from "../utils/weekUtils";
 
+const audicoLogo = "https://cdn.prod.website-files.com/630e4024a1847f1eab9be1e7/67befb8cb45e63df8160f46f_Logga_TvaRader.svg";
+
 function fmtDate(iso?: string): string {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -121,127 +123,166 @@ export function ReportList({ onOpenReport }: Props) {
     tasks.length > 0 || assignments.length > 0 || changes.length > 0 || risks.length > 0;
 
   return (
-    <div className="page page--list">
-      <header className="page__header">
-        <h1 className="page__title">Weekly Reports</h1>
+    <div className="min-h-screen bg-audico-light-grey">
+      {/* App header */}
+      <header className="h-12 bg-white border-b border-audico-mid-grey-3 flex items-center px-6 print:hidden">
+        <img src={audicoLogo} alt="Audico" className="h-6" />
+        <span className="ml-4 text-base font-semibold text-audico-black">Weekly Report</span>
       </header>
 
-      <InitiativeSelector
-        value={initiativeId}
-        onChange={(id, ini) => {
-          setInitiativeId(id);
-          setInitiative(ini);
-        }}
-      />
+      {/* Page content */}
+      <main className="max-w-content mx-auto px-6 py-8 space-y-6">
 
-      {initiativeId && (
-        <div className="list-actions">
-          <button
-            className="btn btn--primary"
-            onClick={handleNewReport}
-            disabled={creating}
-          >
-            {creating ? "Creating…" : "+ New Status Report"}
-          </button>
-        </div>
-      )}
+        {/* Project selector card */}
+        <div className="bg-white rounded-md border border-audico-mid-grey-3 p-6">
+          <InitiativeSelector
+            value={initiativeId}
+            onChange={(id, ini) => {
+              setInitiativeId(id);
+              setInitiative(ini);
+            }}
+          />
 
-      {error && <div className="error-banner">{error}</div>}
-      {loading && <div className="loading-indicator">Loading…</div>}
-
-      {!loading && reports.length > 0 && (
-        <table className="data-table report-list-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Phase</th>
-              <th>Progress</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {reports.map((r) => (
-              <tr key={r.pum_statusreportingid}>
-                <td style={{ whiteSpace: "nowrap" }}>{fmtDate(r.pum_statusdate)}</td>
-                <td>{r.pum_currentphase ?? "—"}</td>
-                <td>{r.pum_scheduleprogress != null ? `${r.pum_scheduleprogress} %` : "—"}</td>
-                <td>
-                  <button
-                    className="btn btn--small"
-                    onClick={() => onOpenReport(r.pum_statusreportingid, initiativeId!)}
-                  >
-                    Open
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      {!loading && initiativeId && reports.length === 0 && !error && (
-        <p className="empty-state">
-          No reports for this project. Create the first report.
-        </p>
-      )}
-
-      {!loading && initiativeId && hasOverviewData && (
-        <section style={{ marginTop: "32px" }}>
-          <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "12px" }}>
-            Project Overview
-          </h2>
-
-          {tasks.length > 0 && (
-            <>
-              <h3 style={{ fontSize: "0.875rem", fontWeight: 600, margin: "12px 0 6px" }}>
-                Tasks ({tasks.length})
-              </h3>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>WBS</th>
-                    <th>Name</th>
-                    <th>Start</th>
-                    <th>End</th>
-                    <th style={{ textAlign: "right" }}>Planned (h)</th>
-                    <th style={{ textAlign: "right" }}>Actual (h)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tasks.map((t) => {
-                    const taskAssignments = assignmentsByTask.get(t.pum_gantttaskid) ?? [];
-                    return (
-                      <React.Fragment key={t.pum_gantttaskid}>
-                        <tr>
-                          <td style={{ whiteSpace: "nowrap", color: "#666" }}>{t.pum_wbs ?? "—"}</td>
-                          <td>{t.pum_name}</td>
-                          <td style={{ whiteSpace: "nowrap" }}>{fmtDate(t.pum_startdate)}</td>
-                          <td style={{ whiteSpace: "nowrap" }}>{fmtDate(t.pum_enddate)}</td>
-                          <td /><td />
-                        </tr>
-                        {taskAssignments.map((a) => (
-                          <tr key={a.pum_assignmentid} style={{ background: "#f9f9f9" }}>
-                            <td />
-                            <td style={{ paddingLeft: "24px", color: "#444", fontSize: "0.85em" }}>
-                              ↳ {a.resourceName}
-                            </td>
-                            <td colSpan={2} />
-                            <td style={{ textAlign: "right", fontSize: "0.85em" }}>{a.plannedHours}</td>
-                            <td style={{ textAlign: "right", fontSize: "0.85em" }}>{a.actualHours}</td>
-                          </tr>
-                        ))}
-                      </React.Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </>
+          {initiativeId && (
+            <div className="mt-4">
+              <button
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded
+                           bg-[var(--audico-accent)] text-white
+                           hover:bg-[var(--audico-accent-hover)] active:bg-[var(--audico-accent-active)]
+                           transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleNewReport}
+                disabled={creating}
+              >
+                {creating ? "Creating…" : "+ New Status Report"}
+              </button>
+            </div>
           )}
+        </div>
 
-          <ChangesTable changes={changes} lang="en" />
-          <RisksTable risks={risks} lang="en" />
-        </section>
-      )}
+        {/* Error */}
+        {error && (
+          <div className="bg-[#fde7e9] border border-[#f4abaa] text-[#a80000] px-4 py-3 rounded text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <div className="flex items-center gap-3 text-audico-mid-grey-1 py-2">
+            <div className="w-5 h-5 rounded-full border-2 border-audico-mid-grey-3 border-t-[var(--audico-accent)] animate-spin" />
+            <span className="text-sm">Loading…</span>
+          </div>
+        )}
+
+        {/* Reports table */}
+        {!loading && reports.length > 0 && (
+          <div className="bg-white rounded-md border border-audico-mid-grey-3 overflow-hidden">
+            <div className="px-6 py-4 border-b border-audico-mid-grey-3">
+              <h2 className="text-base font-semibold text-audico-black">Status Reports</h2>
+            </div>
+            <table className="w-full">
+              <thead>
+                <tr className="bg-audico-light-grey border-b border-audico-mid-grey-3">
+                  <th className="px-4 py-3 text-xs font-semibold text-audico-dark-grey uppercase tracking-wide text-left">Date</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-audico-dark-grey uppercase tracking-wide text-left">Phase</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-audico-dark-grey uppercase tracking-wide text-right">Progress</th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody>
+                {reports.map((r) => (
+                  <tr key={r.pum_statusreportingid} className="border-b border-audico-light-grey hover:bg-audico-light-grey transition-colors">
+                    <td className="px-4 py-3 text-sm text-audico-black whitespace-nowrap">{fmtDate(r.pum_statusdate)}</td>
+                    <td className="px-4 py-3 text-sm text-audico-black">{r.pum_currentphase ?? "—"}</td>
+                    <td className="px-4 py-3 text-sm text-audico-black text-right tabular-nums">
+                      {r.pum_scheduleprogress != null ? `${r.pum_scheduleprogress} %` : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        className="px-3 py-1 text-xs font-semibold rounded bg-white text-audico-black
+                                   border border-audico-mid-grey-3 hover:bg-audico-light-grey transition-colors"
+                        onClick={() => onOpenReport(r.pum_statusreportingid, initiativeId!)}
+                      >
+                        Open
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && initiativeId && reports.length === 0 && !error && (
+          <div className="bg-white rounded-md border border-audico-mid-grey-3 py-16 flex flex-col items-center text-center">
+            <div className="w-12 h-12 rounded-full bg-audico-light-grey flex items-center justify-center mb-4">
+              <svg className="w-6 h-6 text-audico-mid-grey-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <p className="text-base font-semibold text-audico-black">No reports yet</p>
+            <p className="text-sm text-audico-mid-grey-1 mt-1">Create the first status report for this project.</p>
+          </div>
+        )}
+
+        {/* Project overview */}
+        {!loading && initiativeId && hasOverviewData && (
+          <div className="bg-white rounded-md border border-audico-mid-grey-3 overflow-hidden">
+            <div className="px-6 py-4 border-b border-audico-mid-grey-3">
+              <h2 className="text-base font-semibold text-audico-black">Project Overview</h2>
+            </div>
+            <div className="p-6 space-y-6">
+              {tasks.length > 0 && (
+                <div>
+                  <h3 className="section-subtitle">Tasks ({tasks.length})</h3>
+                  <table className="report-table">
+                    <thead>
+                      <tr>
+                        <th className="w-20">WBS</th>
+                        <th>Name</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th className="col-num">Planned (h)</th>
+                        <th className="col-num">Actual (h)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tasks.map((t) => {
+                        const taskAssignments = assignmentsByTask.get(t.pum_gantttaskid) ?? [];
+                        return (
+                          <React.Fragment key={t.pum_gantttaskid}>
+                            <tr>
+                              <td className="whitespace-nowrap text-audico-mid-grey-1">{t.pum_wbs ?? "—"}</td>
+                              <td>{t.pum_name}</td>
+                              <td className="whitespace-nowrap">{fmtDate(t.pum_startdate)}</td>
+                              <td className="whitespace-nowrap">{fmtDate(t.pum_enddate)}</td>
+                              <td /><td />
+                            </tr>
+                            {taskAssignments.map((a) => (
+                              <tr key={a.pum_assignmentid} className="bg-audico-light-grey/50">
+                                <td />
+                                <td className="pl-6 text-audico-mid-grey-1 text-xs">↳ {a.resourceName}</td>
+                                <td colSpan={2} />
+                                <td className="text-right text-xs tabular-nums">{a.plannedHours}</td>
+                                <td className="text-right text-xs tabular-nums">{a.actualHours}</td>
+                              </tr>
+                            ))}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <ChangesTable changes={changes} lang="en" />
+              <RisksTable risks={risks} lang="en" />
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

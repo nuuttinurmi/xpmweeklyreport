@@ -1,4 +1,3 @@
-import React from "react";
 import type { PumChangeRequest, PumRisk } from "../types/dataverse";
 import type { Lang } from "../i18n/translations";
 import { t } from "../i18n/translations";
@@ -17,29 +16,39 @@ const STATUS_LABEL_KEYS: Record<number, "statusOpen" | "statusApproved" | "statu
   4: "statusPending",
 };
 
+const STATUS_BADGE: Record<string, string> = {
+  statusOpen:     "bg-[#1d5eaa]/10 text-status-info",
+  statusApproved: "bg-[#188c5b]/10 text-status-success",
+  statusRejected: "bg-[#c4314b]/10 text-status-error",
+  statusPending:  "bg-[#d4820c]/10 text-status-warning",
+};
+
 export function ChangesTable({ changes, lang }: ChangesProps) {
   return (
     <section className="report-section">
-      <h3 className="report-section__subtitle">{t("changes", lang)}</h3>
+      <h3 className="section-subtitle">{t("changes", lang)}</h3>
       {changes.length === 0 ? (
-        <p className="empty-state">{t("noChanges", lang)}</p>
+        <p className="text-sm text-audico-mid-grey-1 italic">{t("noChanges", lang)}</p>
       ) : (
-        <table className="data-table">
+        <table className="report-table">
           <thead>
             <tr>
               <th>{t("change", lang)}</th>
-              <th>{t("status", lang)}</th>
+              <th className="w-32">{t("status", lang)}</th>
               <th>{t("note", lang)}</th>
             </tr>
           </thead>
           <tbody>
             {changes.map((c) => {
               const statusKey = STATUS_LABEL_KEYS[c.statuscode ?? 0];
+              const badgeClass = statusKey ? STATUS_BADGE[statusKey] : "bg-audico-mid-grey-3 text-audico-mid-grey-1";
               return (
                 <tr key={c.pum_changerequestid}>
                   <td>{c.pum_name}</td>
                   <td>
-                    {c.statuscode_label ?? (statusKey ? t(statusKey, lang) : "—")}
+                    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full ${badgeClass}`}>
+                      {c.statuscode_label ?? (statusKey ? t(statusKey, lang) : "—")}
+                    </span>
                   </td>
                   <td>{c.pum_description ?? "—"}</td>
                 </tr>
@@ -59,13 +68,12 @@ interface RisksProps {
   lang: Lang;
 }
 
-// pum_riskimpact option set labels (from xPM risk matrix)
 const IMPACT_LABELS: Record<number, string> = {
-  976880000: "1 - Very Low",
-  976880001: "2 - Low",
-  976880002: "3 - Medium",
-  976880003: "4 - High",
-  976880004: "5 - Very High",
+  976880000: "1 — Very Low",
+  976880001: "2 — Low",
+  976880002: "3 — Medium",
+  976880003: "4 — High",
+  976880004: "5 — Very High",
 };
 
 const PROBABILITY_LABELS: Record<number, string> = {
@@ -89,31 +97,29 @@ function probabilityLabel(prob?: number): string {
 export function RisksTable({ risks, lang }: RisksProps) {
   return (
     <section className="report-section">
-      <h3 className="report-section__subtitle">{t("risks", lang)}</h3>
+      <h3 className="section-subtitle">{t("risks", lang)}</h3>
       {risks.length === 0 ? (
-        <p className="empty-state">{t("noRisks", lang)}</p>
+        <p className="text-sm text-audico-mid-grey-1 italic">{t("noRisks", lang)}</p>
       ) : (
-        <table className="data-table">
+        <table className="report-table">
           <thead>
             <tr>
               <th>{t("risk", lang)}</th>
-              <th className="data-table__num">{t("impact", lang)}</th>
-              <th className="data-table__num">{t("probability", lang)}</th>
+              <th className="col-num">{t("impact", lang)}</th>
+              <th className="col-num">{t("probability", lang)}</th>
             </tr>
           </thead>
           <tbody>
             {risks.map((r) => (
               <tr key={r.pum_riskid}>
                 <td>
-                  <strong>{r.pum_name}</strong>
+                  <span className="font-semibold">{r.pum_name}</span>
                   {r.pum_riskdescription && (
-                    <div className="risk-description">{r.pum_riskdescription}</div>
+                    <div className="text-xs text-audico-mid-grey-1 mt-0.5">{r.pum_riskdescription}</div>
                   )}
                 </td>
-                <td className="data-table__num">{impactLabel(r.pum_riskimpact)}</td>
-                <td className="data-table__num">
-                  {probabilityLabel(r.pum_probability)}
-                </td>
+                <td className="col-num">{impactLabel(r.pum_riskimpact)}</td>
+                <td className="col-num">{probabilityLabel(r.pum_probability)}</td>
               </tr>
             ))}
           </tbody>
