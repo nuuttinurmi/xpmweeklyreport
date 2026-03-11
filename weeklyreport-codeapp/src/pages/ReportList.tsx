@@ -99,9 +99,18 @@ export function ReportList({ onOpenReport }: Props) {
     setCreating(true);
     setError(null);
     try {
+      const prev = reports[0] ?? null;
       const newReport = await createStatusReport({
         pum_statusdate: today,
         "pum_Initiative@odata.bind": `/pum_initiatives(${initiativeId})`,
+        ...(prev && {
+          pum_kpicurrentresources: prev.pum_kpinewresources,
+          pum_kpicurrentsummary:   prev.pum_kpinewsummary,
+          pum_kpicurrentquality:   prev.pum_kpinewquality,
+          pum_kpicurrentcost:      prev.pum_kpinewcost,
+          pum_kpicurrentscope:     prev.pum_kpinewscope,
+          pum_kpicurrentschedule:  prev.pum_kpinewschedule,
+        }),
       });
       const reportId = newReport.pum_statusreportingid;
       await loadReports(initiativeId);
