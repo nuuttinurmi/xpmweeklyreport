@@ -93,7 +93,7 @@ export function PMFields({ report, onFieldChange, readOnly = false, lang }: Prop
                   <td className="text-audico-mid-grey-1 text-xs">{kpiLabel(currentVal, lang)}</td>
                   <td className="text-xs">
                     <span className="hidden print:inline">{kpiLabel(newVal, lang)}</span>
-                    {readOnly ? (
+                    {readOnly || isSummary ? (
                       <span className="print:hidden">{kpiLabel(newVal, lang)}</span>
                     ) : (
                       <select

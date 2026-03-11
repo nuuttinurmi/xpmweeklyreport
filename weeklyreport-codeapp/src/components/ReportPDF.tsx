@@ -70,20 +70,6 @@ const KPI_DIMS = [
   { key: "schedule",  labelKey: "kpiSchedule",  hasComment: true,  isSummary: false },
 ] as const;
 
-// ── Status badge colours ───────────────────────────────────────
-
-const STATUS_LABEL_KEYS: Record<number, "statusOpen" | "statusApproved" | "statusRejected" | "statusPending"> = {
-  1: "statusOpen",
-  2: "statusApproved",
-  3: "statusRejected",
-  4: "statusPending",
-};
-const STATUS_TEXT_COLORS: Record<string, RGB> = {
-  statusOpen:     C.statusInfo,
-  statusApproved: C.accent,
-  statusRejected: C.statusError,
-  statusPending:  C.statusWarn,
-};
 
 // ── Option set labels ──────────────────────────────────────────
 
@@ -250,7 +236,7 @@ export function generateReportPdf(props: ReportPDFProps): Blob {
       body: staffing.map((r) => [r.name]),
       foot: [[`${t("total", lang)}: ${staffing.length}`]],
       headStyles: { fillColor: C.lightGrey, textColor: C.darkGrey, fontSize: 7 },
-      footStyles: { fillColor: C.lightGrey, fontStyle: "bold", fontSize: 8 },
+      footStyles: { fillColor: C.lightGrey, textColor: C.darkGrey, fontStyle: "bold", fontSize: 8 },
       styles: { fontSize: 8, cellPadding: 2 },
       theme: "grid",
     });
@@ -390,24 +376,27 @@ export function generateReportPdf(props: ReportPDFProps): Blob {
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: margin },
-        head: [[t("change", lang), t("status", lang), t("note", lang)]],
+        head: [[t("change", lang), t("status", lang), t("dateApproved", lang), t("note", lang)]],
         body: changes.map((c) => {
-          const statusKey = STATUS_LABEL_KEYS[c.statuscode ?? 0];
+          const approved = c.pum_approved === true;
+          const dateStr = c.pum_dateapproved
+            ? new Date(c.pum_dateapproved).toLocaleDateString()
+            : "—";
           return [
             c.pum_name,
-            c.statuscode_label ?? (statusKey ? t(statusKey, lang) : "—"),
+            approved ? t("statusApproved", lang) : t("statusNotApproved", lang),
+            dateStr,
             c.pum_description ?? "—",
           ];
         }),
         headStyles: { fillColor: C.lightGrey, textColor: C.darkGrey, fontSize: 7 },
-        columnStyles: { 1: { cellWidth: 35 } },
+        columnStyles: { 1: { cellWidth: 30 }, 2: { cellWidth: 28 } },
         styles: { fontSize: 8, cellPadding: 2 },
         theme: "grid",
         didParseCell: (data) => {
           if (data.section === "body" && data.column.index === 1) {
             const c = changes[data.row.index];
-            const sk = STATUS_LABEL_KEYS[c.statuscode ?? 0];
-            data.cell.styles.textColor = sk ? STATUS_TEXT_COLORS[sk] : C.midGrey1;
+            data.cell.styles.textColor = c.pum_approved ? C.accent : C.midGrey1;
             data.cell.styles.fontStyle = "bold";
           }
         },

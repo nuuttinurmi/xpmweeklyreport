@@ -4,7 +4,7 @@
 // Report entity: pum_statusreporting (existing xPM table)
 // ============================================================
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type {
   PumInitiative,
   PumStatusReporting,
@@ -16,6 +16,7 @@ import type {
 import { PROJECT_TYPE_LARGE } from "../types/dataverse";
 import {
   fetchStatusReport,
+  fetchStatusReports,
   fetchGanttTasksWithStaffing,
   fetchAllGanttTasks,
   fetchAssignmentsWithRoles,
@@ -79,6 +80,27 @@ export function useWeeklyReport(
   const [risks, setRisks] = useState<PumRisk[]>([]);
   const [isLargeProject, setIsLargeProject] = useState(true);
 
+  // Holds sibling reports so save() can reapply the KPI overlay after refetch
+  const siblingReportsRef = useRef<PumStatusReporting[]>([]);
+
+  function applyKpiOverlay(rep: PumStatusReporting, siblings: PumStatusReporting[]): PumStatusReporting {
+    const repDate = rep.pum_statusdate ?? "";
+    const prev = siblings
+      .filter((r) => r.pum_statusreportingid !== rep.pum_statusreportingid && (r.pum_statusdate ?? "") < repDate)
+      .sort((a, b) => ((b.pum_statusdate ?? "") > (a.pum_statusdate ?? "") ? 1 : -1))[0] ?? null;
+    return {
+      ...rep,
+      ...(prev && {
+        pum_kpicurrentresources: prev.pum_kpinewresources,
+        pum_kpicurrentsummary:   prev.pum_kpinewsummary,
+        pum_kpicurrentquality:   prev.pum_kpinewquality,
+        pum_kpicurrentcost:      prev.pum_kpinewcost,
+        pum_kpicurrentscope:     prev.pum_kpinewscope,
+        pum_kpicurrentschedule:  prev.pum_kpinewschedule,
+      }),
+    };
+  }
+
   useEffect(() => {
     if (!reportId || !initiativeId) return;
     load();
@@ -89,13 +111,16 @@ export function useWeeklyReport(
     setLoading(true);
     setError(null);
     try {
-      // 1. Fetch the status report + initiative (for project type + project number)
-      const [rep, ini] = await Promise.all([
+      // 1. Fetch the status report, all sibling reports, and initiative in parallel
+      const [rep, allReports, ini] = await Promise.all([
         fetchStatusReport(reportId),
+        fetchStatusReports(initiativeId),
         fetchInitiativeWithType(initiativeId),
       ]);
       if (!rep) throw new Error("Report not found");
-      setReport(rep);
+
+      siblingReportsRef.current = allReports;
+      setReport(applyKpiOverlay(rep, allReports));
       setInitiative(ini);
 
       // Determine Large vs Small
@@ -170,7 +195,6 @@ export function useWeeklyReport(
         pum_comment: report.pum_comment,
         pum_statuscategory: report.pum_statuscategory,
         pum_kpinewresources: report.pum_kpinewresources,
-        pum_kpinewsummary: report.pum_kpinewsummary,
         pum_kpinewquality: report.pum_kpinewquality,
         pum_kpinewcost: report.pum_kpinewcost,
         pum_kpinewscope: report.pum_kpinewscope,
@@ -181,6 +205,9 @@ export function useWeeklyReport(
         pum_kpinewscopecomment: report.pum_kpinewscopecomment,
         pum_kpinewschedulecomment: report.pum_kpinewschedulecomment,
       });
+      // Refetch the report so Dataverse-calculated fields (e.g. pum_kpinewsummary) are current
+      const fresh = await fetchStatusReport(report.pum_statusreportingid);
+      if (fresh) setReport(applyKpiOverlay(fresh, siblingReportsRef.current));
       setDirty(false);
     } finally {
       setSaving(false);

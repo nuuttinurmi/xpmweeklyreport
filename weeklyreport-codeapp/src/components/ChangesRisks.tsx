@@ -9,18 +9,9 @@ interface ChangesProps {
   lang: Lang;
 }
 
-const STATUS_LABEL_KEYS: Record<number, "statusOpen" | "statusApproved" | "statusRejected" | "statusPending"> = {
-  1: "statusOpen",
-  2: "statusApproved",
-  3: "statusRejected",
-  4: "statusPending",
-};
-
-const STATUS_BADGE: Record<string, string> = {
-  statusOpen:     "bg-[#1d5eaa]/10 text-status-info",
-  statusApproved: "bg-[#188c5b]/10 text-status-success",
-  statusRejected: "bg-[#c4314b]/10 text-status-error",
-  statusPending:  "bg-[#d4820c]/10 text-status-warning",
+const APPROVED_BADGE: Record<string, string> = {
+  yes: "bg-[#188c5b]/10 text-status-success",
+  no:  "bg-audico-mid-grey-3 text-audico-mid-grey-1",
 };
 
 export function ChangesTable({ changes, lang }: ChangesProps) {
@@ -35,20 +26,24 @@ export function ChangesTable({ changes, lang }: ChangesProps) {
             <tr>
               <th>{t("change", lang)}</th>
               <th className="w-32">{t("status", lang)}</th>
+              <th className="w-32">{t("dateApproved", lang)}</th>
               <th>{t("note", lang)}</th>
             </tr>
           </thead>
           <tbody>
             {changes.map((c) => {
-              const statusKey = STATUS_LABEL_KEYS[c.statuscode ?? 0];
-              const badgeClass = statusKey ? STATUS_BADGE[statusKey] : "bg-audico-mid-grey-3 text-audico-mid-grey-1";
+              const approved = c.pum_approved === true;
+              const badgeClass = approved ? APPROVED_BADGE.yes : APPROVED_BADGE.no;
               return (
                 <tr key={c.pum_changerequestid}>
                   <td>{c.pum_name}</td>
                   <td>
                     <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full ${badgeClass}`}>
-                      {c.statuscode_label ?? (statusKey ? t(statusKey, lang) : "—")}
+                      {approved ? t("statusApproved", lang) : t("statusNotApproved", lang)}
                     </span>
+                  </td>
+                  <td className="text-xs text-audico-dark-grey">
+                    {c.pum_dateapproved ? new Date(c.pum_dateapproved).toLocaleDateString() : "—"}
                   </td>
                   <td>{c.pum_description ?? "—"}</td>
                 </tr>

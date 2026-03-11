@@ -50,7 +50,7 @@ const translations = {
   commentPlaceholder: { en: "Brief description of project status, critical issues, next steps...", fi: "Lyhyt kuvaus projektin tilanteesta, kriittisista asioista, seuraavista askeleista...", sv: "Kort beskrivning av projektstatus, kritiska fragor, nasta steg..." },
   kpiStatus: { en: "KPI Status", fi: "KPI-tilanne", sv: "KPI-status" },
   dimension: { en: "Dimension", fi: "Ulottuvuus", sv: "Dimension" },
-  current: { en: "Current", fi: "Nykyinen", sv: "Nuvarande" },
+  current: { en: "Previous", fi: "Edellinen", sv: "Foregaende" },
   proposed: { en: "Proposed", fi: "Ehdotettu", sv: "Foreslagen" },
   note: { en: "Note", fi: "Huomio", sv: "Anmarkning" },
   kpiSummary: { en: "Summary", fi: "Yhteenveto", sv: "Sammanfattning" },
@@ -75,7 +75,9 @@ const translations = {
   probability: { en: "Probability", fi: "Todennakoisyys", sv: "Sannolikhet" },
   noRisks: { en: "No active risks.", fi: "Ei aktiivisia riskeja.", sv: "Inga aktiva risker." },
   statusOpen: { en: "Open", fi: "Avoin", sv: "Oppen" },
+  dateApproved: { en: "Date Approved", fi: "Hyvaksymispvm", sv: "Godkannandedatum" },
   statusApproved: { en: "Approved", fi: "Hyvaksytty", sv: "Godkand" },
+  statusNotApproved: { en: "Not Approved", fi: "Ei hyvaksytty", sv: "Ej godkand" },
   statusRejected: { en: "Rejected", fi: "Hylatty", sv: "Avvisad" },
   statusPending: { en: "Pending Approval", fi: "Odottaa hyvaksyntaa", sv: "Vantar pa godkannande" },
 

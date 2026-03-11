@@ -236,7 +236,7 @@ export async function fetchChangeRequests(
 ): Promise<PumChangeRequest[]> {
   const result = await Pum_changerequestsService.getAll({
     filter: `_pum_initiative_value eq '${initiativeId}'`,
-    select: ["pum_changerequestid", "pum_name", "pum_description", "statuscode"],
+    select: ["pum_changerequestid", "pum_name", "pum_description", "statuscode", "pum_approved", "pum_dateapproved"],
     orderBy: ["createdon desc"],
   });
   return (result.data ?? []) as unknown as PumChangeRequest[];

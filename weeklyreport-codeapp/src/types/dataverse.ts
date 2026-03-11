@@ -65,6 +65,8 @@ export interface PumChangeRequest {
   pum_description?: string;
   statuscode?: number;
   statuscode_label?: string;
+  pum_approved?: boolean;
+  pum_dateapproved?: string;
   pum_initiativeid?: string;
 }
 
