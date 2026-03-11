@@ -8,7 +8,7 @@ const translations = {
   back: { en: "Back", fi: "Takaisin", sv: "Tillbaka" },
   save: { en: "Save", fi: "Tallenna", sv: "Spara" },
   saving: { en: "Saving...", fi: "Tallennetaan...", sv: "Sparar..." },
-  printPreview: { en: "Print / Preview", fi: "Tulosta / Esikatselu", sv: "Skriv ut / Forhandsgranska" },
+  downloadPdf: { en: "Download PDF", fi: "Lataa PDF", sv: "Ladda ned PDF" },
   saveFirst: { en: "Save first", fi: "Tallenna ensin", sv: "Spara forst" },
   generatePdf: { en: "Generate PDF", fi: "Luo PDF", sv: "Skapa PDF" },
   generating: { en: "Generating...", fi: "Luodaan...", sv: "Skapar..." },

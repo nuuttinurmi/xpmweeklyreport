@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { generateReportPdf } from "../components/ReportPDF";
 import { ReportHeader } from "../components/ReportHeader";
 import { StaffingTable } from "../components/StaffingTable";
 import { ScheduleGrid } from "../components/ScheduleGrid";
@@ -8,8 +9,7 @@ import { useWeeklyReport } from "../hooks/useWeeklyReport";
 import { getISOWeek } from "../utils/weekUtils";
 import type { Lang } from "../i18n/translations";
 import { t } from "../i18n/translations";
-
-const audicoLogo = "https://cdn.prod.website-files.com/630e4024a1847f1eab9be1e7/67befb8cb45e63df8160f46f_Logga_TvaRader.svg";
+import audicoLogo from "../assets/audico-logo.png";
 
 interface Props {
   reportId: string;
@@ -42,13 +42,48 @@ export function ReportEditor({
   } = useWeeklyReport(reportId, initiativeId);
 
   const [lang, setLang] = useState<Lang>("en");
+  const [downloading, setDownloading] = useState(false);
   const [triggeringFlow, setTriggeringFlow] = useState(false);
   const [flowError, setFlowError] = useState<string | null>(null);
   const [flowSuccess, setFlowSuccess] = useState(false);
 
-  async function handlePrint() {
+  async function handleDownloadPDF() {
+    if (!report) return;
     if (dirty) await save();
-    window.print();
+
+    setDownloading(true);
+    try {
+      // audicoLogo is already a base64 data URL after Vite inlines it at build time
+      const blob = generateReportPdf({
+        report,
+        initiative,
+        staffing,
+        scheduleCells,
+        scheduleColumns,
+        changes,
+        risks,
+        isLargeProject,
+        lang,
+        week,
+        year,
+        logoDataUrl: audicoLogo,
+      });
+
+      const projectSlug = (initiative?.pum_name ?? "report")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${projectSlug}-weekly-report-wk${week}-${year}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloading(false);
+    }
   }
 
   async function handleTriggerFlow() {
@@ -159,10 +194,12 @@ export function ReportEditor({
           <button
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded
                        bg-white text-audico-black border border-audico-mid-grey-3
-                       hover:bg-audico-light-grey transition-colors"
-            onClick={handlePrint}
+                       hover:bg-audico-light-grey transition-colors
+                       disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleDownloadPDF}
+            disabled={downloading}
           >
-            {t("printPreview", lang)}
+            {downloading ? t("generating", lang) : t("downloadPdf", lang)}
           </button>
 
           {powerAutomateFlowUrl && (

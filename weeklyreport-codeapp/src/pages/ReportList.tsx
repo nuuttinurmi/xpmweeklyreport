@@ -19,7 +19,7 @@ import {
 } from "../utils/dataverseClient";
 import { toISODateString } from "../utils/weekUtils";
 
-const audicoLogo = "https://cdn.prod.website-files.com/630e4024a1847f1eab9be1e7/67befb8cb45e63df8160f46f_Logga_TvaRader.svg";
+import audicoLogo from "../assets/audico-logo.png";
 
 function fmtDate(iso?: string): string {
   if (!iso) return "—";
