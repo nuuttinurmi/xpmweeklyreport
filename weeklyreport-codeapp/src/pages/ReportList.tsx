@@ -15,6 +15,7 @@ import {
   fetchChangeRequests,
   fetchRisks,
   fetchAssignmentsForInitiative,
+  fetchInitiativeWithType,
   type AssignmentRow,
 } from "../utils/dataverseClient";
 import { toISODateString } from "../utils/weekUtils";
@@ -33,7 +34,7 @@ interface Props {
 
 export function ReportList({ onOpenReport }: Props) {
   const [initiativeId, setInitiativeId] = useState<string | null>(null);
-  const [_initiative, setInitiative] = useState<PumInitiative | null>(null);
+  const [initiative, setInitiative] = useState<PumInitiative | null>(null);
   const [reports, setReports] = useState<PumStatusReporting[]>([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -53,14 +54,16 @@ export function ReportList({ onOpenReport }: Props) {
     setLoading(true);
     setError(null);
     setReports([]);
+    setInitiative(null);
     setTasks([]);
     setAssignments([]);
     setChanges([]);
     setRisks([]);
 
-    const [reportsResult, tasksResult, assignmentsResult, changesResult, risksResult] =
+    const [reportsResult, initiativeResult, tasksResult, assignmentsResult, changesResult, risksResult] =
       await Promise.allSettled([
         fetchStatusReports(id),
+        fetchInitiativeWithType(id),
         fetchAllGanttTasks(id, "2020-01-01", "2030-12-31"),
         fetchAssignmentsForInitiative(id),
         fetchChangeRequests(id),
@@ -77,6 +80,7 @@ export function ReportList({ onOpenReport }: Props) {
       setError(msg);
     }
 
+    if (initiativeResult.status === "fulfilled") setInitiative(initiativeResult.value);
     if (tasksResult.status === "fulfilled") setTasks(tasksResult.value);
     if (assignmentsResult.status === "fulfilled") setAssignments(assignmentsResult.value);
     if (changesResult.status === "fulfilled") setChanges(changesResult.value);
@@ -103,7 +107,15 @@ export function ReportList({ onOpenReport }: Props) {
         pum_statusdate: today,
         "pum_Initiative@odata.bind": `/pum_initiatives(${initiativeId})`,
       });
-      const reportId = newReport.pum_statusreportingid;
+      // Dataverse returns 204 No Content on create; result.data may be null.
+      // Fall back to finding the new report by date from a fresh list.
+      let reportId = newReport.pum_statusreportingid;
+      if (!reportId) {
+        const freshReports = await fetchStatusReports(initiativeId);
+        const match = freshReports.find((r) => r.pum_statusdate?.slice(0, 10) === today);
+        reportId = match?.pum_statusreportingid ?? "";
+      }
+      if (!reportId) throw new Error("Report created but ID could not be retrieved. Please refresh.");
       await loadReports(initiativeId);
       onOpenReport(reportId, initiativeId);
     } catch (err: unknown) {
@@ -193,9 +205,11 @@ export function ReportList({ onOpenReport }: Props) {
                 {reports.map((r) => (
                   <tr key={r.pum_statusreportingid} className="border-b border-audico-light-grey hover:bg-audico-light-grey transition-colors">
                     <td className="px-4 py-3 text-sm text-audico-black whitespace-nowrap">{fmtDate(r.pum_statusdate)}</td>
-                    <td className="px-4 py-3 text-sm text-audico-black">{r.pum_currentphase ?? "—"}</td>
+                    <td className="px-4 py-3 text-sm text-audico-black">{initiative?.pum_currentstagetextfield ?? "—"}</td>
                     <td className="px-4 py-3 text-sm text-audico-black text-right tabular-nums">
-                      {r.pum_scheduleprogress != null ? `${r.pum_scheduleprogress} %` : "—"}
+                      {initiative?.pum_scheduleprogressin
+                        ? `${initiative.pum_scheduleprogressin.replace(/%\s*$/, "").trim()} %`
+                        : "—"}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button

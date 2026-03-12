@@ -24,11 +24,11 @@ export function ReportHeader({ report, initiative, readOnly = false, lang }: Pro
     { label: t("project", lang), value: initiative?.pum_name ?? "—" },
     { label: t("client", lang), value: initiative?.aud_customer ?? "—" },
     { label: t("projectManager", lang), value: initiative?.ownerName ?? "—" },
-    { label: t("phase", lang), value: report.pum_currentphase ?? "—" },
+    { label: t("phase", lang), value: initiative?.pum_currentstagetextfield ?? "—" },
     {
       label: t("scheduleProgress", lang),
-      value: report.pum_scheduleprogress != null
-        ? `${report.pum_scheduleprogress} %`
+      value: initiative?.pum_scheduleprogressin
+        ? `${initiative.pum_scheduleprogressin.replace(/%\s*$/, "").trim()} %`
         : "—",
     },
   ];

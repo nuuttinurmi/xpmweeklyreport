@@ -51,8 +51,9 @@ export async function fetchAssignmentsForInitiative(
   return (result.data ?? []).map((r) => ({
     pum_assignmentid: r.pum_assignmentid,
     taskId: r._pum_asstask_value ?? "",
-    // pum_resourcename is the denormalized display name returned with annotations
-    resourceName: (r as unknown as Record<string, string>).pum_resourcename ?? "—",
+    resourceName: (r as unknown as Record<string, string>)["_pum_resource_value@OData.Community.Display.V1.FormattedValue"]
+      || r.pum_resourcename
+      || "—",
     taskName: r.pum_taskname ?? "—",
     plannedHours: Number(r.pum_assignmentwork ?? 0),
     actualHours: Number(r.pum_assignmentactualwork ?? 0),
@@ -73,14 +74,18 @@ export interface StaffingAssignment {
 export async function fetchAssignmentsWithRoles(
   initiativeId: string
 ): Promise<StaffingAssignment[]> {
-  // Step 1: get assignments
+  // Fetch assignments — pum_resourcename is an annotation returned with _pum_resource_value
   const assignRes = await Pum_assignmentsService.getAll({
     filter: `_pum_initiative_value eq '${initiativeId}' and statecode eq 0`,
-    select: ["pum_assignmentid", "_pum_asstask_value", "_pum_resource_value"],
+    select: [
+      "pum_assignmentid",
+      "_pum_asstask_value",
+      "_pum_resource_value",
+    ] as string[],
   });
   const assignments = assignRes.data ?? [];
 
-  // Step 2: collect unique resource IDs
+  // Build resource map for type + role enrichment (best-effort; names come from pum_resourcename)
   const resourceIds = [
     ...new Set(
       assignments
@@ -88,41 +93,34 @@ export async function fetchAssignmentsWithRoles(
         .filter((id): id is string => !!id)
     ),
   ];
-
-  // Step 3: fetch resource records (name, type, role name)
-  const resourceMap = new Map<
-    string,
-    { name: string; type: string; roleName: string }
-  >();
+  const resourceMap = new Map<string, { type: string; roleName: string }>();
   if (resourceIds.length > 0) {
     const resFilter = resourceIds
       .map((id) => `pum_resourceid eq '${id}'`)
       .join(" or ");
     const resRes = await Pum_resourcesService.getAll({
       filter: resFilter,
-      select: ["pum_resourceid", "pum_name", "pum_resourcetype", "_pum_role_value"],
+      select: ["pum_resourceid", "pum_resourcetype", "_pum_role_value"],
     });
     for (const r of resRes.data ?? []) {
       resourceMap.set(r.pum_resourceid, {
-        name: r.pum_name,
-        // pum_resourcetype is a numeric option set key (e.g. 493840000 = Named)
         type: String(r.pum_resourcetype ?? ""),
-        // pum_rolename is the display name of the Role lookup, returned with annotations
-        roleName: (r as unknown as Record<string, string>).pum_rolename ?? "Muu",
+        roleName: (r as unknown as Record<string, string>)["_pum_role_value@OData.Community.Display.V1.FormattedValue"]
+          || r.pum_rolename
+          || "Muu",
       });
     }
   }
 
-  // Step 4: join
   return assignments.map((a) => {
-    const res = a._pum_resource_value
-      ? resourceMap.get(a._pum_resource_value)
-      : undefined;
+    const res = a._pum_resource_value ? resourceMap.get(a._pum_resource_value) : undefined;
     return {
       pum_assignmentid: a.pum_assignmentid,
       taskId: a._pum_asstask_value ?? "",
       resourceId: a._pum_resource_value ?? "",
-      resourceName: res?.name ?? "—",
+      resourceName: (a as unknown as Record<string, string>)["_pum_resource_value@OData.Community.Display.V1.FormattedValue"]
+        || a.pum_resourcename
+        || "—",
       resourceType: res?.type ?? "",
       roleName: res?.roleName ?? "Muu",
     };
@@ -134,19 +132,9 @@ export async function fetchAssignmentsWithRoles(
 export async function fetchInitiativeWithType(
   initiativeId: string
 ): Promise<PumInitiative | null> {
-  const result = await Pum_initiativesService.get(initiativeId, {
-    select: [
-      "pum_initiativeid",
-      "pum_name",
-      "pum_projecttype",
-      "aud_projectno",
-      "aud_customer",
-      "pum_initiativestart",
-      "pum_initiativefinish",
-      // Include owner lookup so owneridname annotation is returned
-      "_ownerid_value",
-    ],
-  });
+  // No $select: fetch all fields so owneridname (virtual owner display field) is always returned.
+  // Explicit $select with owneridname causes a 400 in Dataverse Web API.
+  const result = await Pum_initiativesService.get(initiativeId);
   const r = result.data;
   if (!r) return null;
   return {
@@ -158,8 +146,13 @@ export async function fetchInitiativeWithType(
     aud_customer: r.aud_customer,
     pum_initiativestart: r.pum_initiativestart,
     pum_initiativefinish: r.pum_initiativefinish,
-    // owneridname is the display name of the owner, returned with include-annotations=*
-    ownerName: r.owneridname ?? undefined,
+    pum_currentstagetextfield: r.pum_currentstagetextfield,
+    // pum_scheduleprogressin is StringType in Dataverse — keep as string, don't Number()
+    pum_scheduleprogressin: r.pum_scheduleprogressin ?? undefined,
+    // _ownerid_value@OData.Community.Display.V1.FormattedValue is the actual annotation key
+    ownerName: (r as unknown as Record<string, string>)["_ownerid_value@OData.Community.Display.V1.FormattedValue"]
+      || r.owneridname
+      || undefined,
   };
 }
 
@@ -258,6 +251,37 @@ export async function fetchRisks(initiativeId: string): Promise<PumRisk[]> {
     orderBy: ["pum_riskimpact desc"],
   });
   return (result.data ?? []) as unknown as PumRisk[];
+}
+
+export async function createChangeRequest(
+  initiativeId: string,
+  data: { pum_name: string; pum_description?: string }
+): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await Pum_changerequestsService.create({
+    pum_name: data.pum_name,
+    pum_description: data.pum_description,
+    "pum_Initiative@odata.bind": `/pum_initiatives(${initiativeId})`,
+  } as any);
+}
+
+export async function createRisk(
+  initiativeId: string,
+  data: {
+    pum_name: string;
+    pum_riskdescription?: string;
+    pum_riskimpact?: number;
+    pum_probability?: number;
+  }
+): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await Pum_risksService.create({
+    pum_name: data.pum_name,
+    pum_riskdescription: data.pum_riskdescription,
+    ...(data.pum_riskimpact != null && { pum_riskimpact: data.pum_riskimpact }),
+    ...(data.pum_probability != null && { pum_probability: data.pum_probability }),
+    "pum_Initiative@odata.bind": `/pum_initiatives(${initiativeId})`,
+  } as any);
 }
 
 // ── StatusReporting CRUD ─────────────────────────────────────

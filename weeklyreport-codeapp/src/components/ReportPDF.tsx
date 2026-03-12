@@ -205,8 +205,8 @@ export function generateReportPdf(props: ReportPDFProps): Blob {
     [t("project", lang),        initiative?.pum_name ?? "—"],
     [t("client", lang),         initiative?.aud_customer ?? "—"],
     [t("projectManager", lang), initiative?.ownerName ?? "—"],
-    [t("phase", lang),          report.pum_currentphase ?? "—"],
-    [t("scheduleProgress", lang), report.pum_scheduleprogress != null ? `${report.pum_scheduleprogress} %` : "—"],
+    [t("phase", lang),          initiative?.pum_currentstagetextfield ?? "—"],
+    [t("scheduleProgress", lang), initiative?.pum_scheduleprogressin ? `${initiative.pum_scheduleprogressin.replace(/%\s*$/, "").trim()} %` : "—"],
   ];
   autoTable(doc, {
     startY: y,
@@ -236,7 +236,7 @@ export function generateReportPdf(props: ReportPDFProps): Blob {
       body: staffing.map((r) => [r.name]),
       foot: [[`${t("total", lang)}: ${staffing.length}`]],
       headStyles: { fillColor: C.lightGrey, textColor: C.darkGrey, fontSize: 7 },
-      footStyles: { fillColor: C.lightGrey, textColor: C.darkGrey, fontStyle: "bold", fontSize: 8 },
+      footStyles: { fillColor: C.lightGrey, textColor: C.black, fontStyle: "bold", fontSize: 8 },
       styles: { fontSize: 8, cellPadding: 2 },
       theme: "grid",
     });

@@ -17,6 +17,8 @@ export interface PumInitiative {
   aud_projectno?: string;   // Audico custom: project number (join key to ecr_projectportfolio2)
   aud_customer?: string;    // Audico custom: customer name
   ownerName?: string;       // resolved from _ownerid_value formatted annotation
+  pum_currentstagetextfield?: string; // current BPF stage name
+  pum_scheduleprogressin?: string;    // schedule progress (StringType in Dataverse, e.g. "45.00")
 }
 
 export const PROJECT_TYPE_SMALL = 493840000;
@@ -109,8 +111,8 @@ export interface PumStatusReporting {
   pum_comment?: string;              // main PM free-text
   pum_statuscategory?: number;       // option set
   statecode?: number;                // 0 = active, 1 = inactive
-  pum_currentphase?: string;         // e.g. "1. Initiate"
-  pum_scheduleprogress?: number;     // 0–100
+  pum_currentphase?: string;          // current phase (status report field)
+  pum_scheduleprogress?: string;      // schedule progress (status report field)
   pum_actualcost?: number;
   pum_budget?: number;
   // KPI current (read-only, xPM-managed)

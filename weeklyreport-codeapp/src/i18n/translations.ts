@@ -81,6 +81,14 @@ const translations = {
   statusRejected: { en: "Rejected", fi: "Hylatty", sv: "Avvisad" },
   statusPending: { en: "Pending Approval", fi: "Odottaa hyvaksyntaa", sv: "Vantar pa godkannande" },
 
+  // Inline add forms (ChangesRisks)
+  addChange: { en: "+ Add Change", fi: "+ Lisää muutos", sv: "+ Lägg till ändring" },
+  addRisk: { en: "+ Add Risk", fi: "+ Lisää riski", sv: "+ Lägg till risk" },
+  add: { en: "Add", fi: "Lisää", sv: "Lägg till" },
+  adding: { en: "Adding...", fi: "Lisätään...", sv: "Lägger till..." },
+  cancel: { en: "Cancel", fi: "Peruuta", sv: "Avbryt" },
+  description: { en: "Description", fi: "Kuvaus", sv: "Beskrivning" },
+
   // Language selector
   language: { en: "Language", fi: "Kieli", sv: "Sprak" },
 } as const;

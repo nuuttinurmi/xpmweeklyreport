@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { PumChangeRequest, PumRisk } from "../types/dataverse";
 import type { Lang } from "../i18n/translations";
 import { t } from "../i18n/translations";
@@ -7,6 +8,8 @@ import { t } from "../i18n/translations";
 interface ChangesProps {
   changes: PumChangeRequest[];
   lang: Lang;
+  readOnly?: boolean;
+  onAdd?: (data: { pum_name: string; pum_description?: string }) => Promise<void>;
 }
 
 const APPROVED_BADGE: Record<string, string> = {
@@ -14,7 +17,32 @@ const APPROVED_BADGE: Record<string, string> = {
   no:  "bg-audico-mid-grey-3 text-audico-mid-grey-1",
 };
 
-export function ChangesTable({ changes, lang }: ChangesProps) {
+export function ChangesTable({ changes, lang, readOnly = false, onAdd }: ChangesProps) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [desc, setDesc] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!onAdd || !name.trim()) return;
+    setSubmitting(true);
+    try {
+      await onAdd({ pum_name: name.trim(), pum_description: desc.trim() || undefined });
+      setName("");
+      setDesc("");
+      setOpen(false);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function handleCancel() {
+    setOpen(false);
+    setName("");
+    setDesc("");
+  }
+
   return (
     <section className="report-section">
       <h3 className="section-subtitle">{t("changes", lang)}</h3>
@@ -52,6 +80,64 @@ export function ChangesTable({ changes, lang }: ChangesProps) {
           </tbody>
         </table>
       )}
+
+      {!readOnly && onAdd && (
+        <div className="mt-3 print:hidden">
+          {!open ? (
+            <button
+              className="text-sm font-semibold text-[var(--audico-accent)] hover:underline"
+              onClick={() => setOpen(true)}
+            >
+              {t("addChange", lang)}
+            </button>
+          ) : (
+            <form onSubmit={handleSubmit} className="mt-2 p-4 bg-audico-light-grey rounded border border-audico-mid-grey-3 space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-audico-dark-grey mb-1">
+                  {t("change", lang)} *
+                </label>
+                <input
+                  className="w-full px-3 py-1.5 text-sm border border-audico-mid-grey-3 rounded bg-white focus:outline-none focus:ring-1 focus:ring-[var(--audico-accent)]"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-audico-dark-grey mb-1">
+                  {t("description", lang)}
+                </label>
+                <textarea
+                  className="w-full px-3 py-1.5 text-sm border border-audico-mid-grey-3 rounded bg-white focus:outline-none focus:ring-1 focus:ring-[var(--audico-accent)] resize-none"
+                  rows={2}
+                  value={desc}
+                  onChange={(e) => setDesc(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={submitting || !name.trim()}
+                  className="px-3 py-1.5 text-sm font-semibold rounded bg-[var(--audico-accent)] text-white
+                             hover:bg-[var(--audico-accent-hover)] transition-colors
+                             disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? t("adding", lang) : t("add", lang)}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="px-3 py-1.5 text-sm font-semibold rounded bg-white text-audico-black
+                             border border-audico-mid-grey-3 hover:bg-audico-light-grey transition-colors"
+                >
+                  {t("cancel", lang)}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
     </section>
   );
 }
@@ -61,23 +147,28 @@ export function ChangesTable({ changes, lang }: ChangesProps) {
 interface RisksProps {
   risks: PumRisk[];
   lang: Lang;
+  readOnly?: boolean;
+  onAdd?: (data: { pum_name: string; pum_riskdescription?: string; pum_riskimpact?: number; pum_probability?: number }) => Promise<void>;
 }
 
-const IMPACT_LABELS: Record<number, string> = {
-  976880000: "1 — Very Low",
-  976880001: "2 — Low",
-  976880002: "3 — Medium",
-  976880003: "4 — High",
-  976880004: "5 — Very High",
-};
+const IMPACT_OPTIONS: { value: number; label: string }[] = [
+  { value: 976880000, label: "1 — Very Low" },
+  { value: 976880001, label: "2 — Low" },
+  { value: 976880002, label: "3 — Medium" },
+  { value: 976880003, label: "4 — High" },
+  { value: 976880004, label: "5 — Very High" },
+];
 
-const PROBABILITY_LABELS: Record<number, string> = {
-  976880000: "10 %",
-  976880001: "30 %",
-  976880002: "50 %",
-  976880003: "70 %",
-  976880004: "90 %",
-};
+const PROBABILITY_OPTIONS: { value: number; label: string }[] = [
+  { value: 976880000, label: "10 %" },
+  { value: 976880001, label: "30 %" },
+  { value: 976880002, label: "50 %" },
+  { value: 976880003, label: "70 %" },
+  { value: 976880004, label: "90 %" },
+];
+
+const IMPACT_LABELS: Record<number, string> = Object.fromEntries(IMPACT_OPTIONS.map((o) => [o.value, o.label]));
+const PROBABILITY_LABELS: Record<number, string> = Object.fromEntries(PROBABILITY_OPTIONS.map((o) => [o.value, o.label]));
 
 function impactLabel(impact?: number): string {
   if (impact == null) return "—";
@@ -89,7 +180,43 @@ function probabilityLabel(prob?: number): string {
   return PROBABILITY_LABELS[prob] ?? String(prob);
 }
 
-export function RisksTable({ risks, lang }: RisksProps) {
+export function RisksTable({ risks, lang, readOnly = false, onAdd }: RisksProps) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [riskDesc, setRiskDesc] = useState("");
+  const [impact, setImpact] = useState<string>("");
+  const [probability, setProbability] = useState<string>("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!onAdd || !name.trim()) return;
+    setSubmitting(true);
+    try {
+      await onAdd({
+        pum_name: name.trim(),
+        pum_riskdescription: riskDesc.trim() || undefined,
+        pum_riskimpact: impact !== "" ? Number(impact) : undefined,
+        pum_probability: probability !== "" ? Number(probability) : undefined,
+      });
+      setName("");
+      setRiskDesc("");
+      setImpact("");
+      setProbability("");
+      setOpen(false);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function handleCancel() {
+    setOpen(false);
+    setName("");
+    setRiskDesc("");
+    setImpact("");
+    setProbability("");
+  }
+
   return (
     <section className="report-section">
       <h3 className="section-subtitle">{t("risks", lang)}</h3>
@@ -119,6 +246,96 @@ export function RisksTable({ risks, lang }: RisksProps) {
             ))}
           </tbody>
         </table>
+      )}
+
+      {!readOnly && onAdd && (
+        <div className="mt-3 print:hidden">
+          {!open ? (
+            <button
+              className="text-sm font-semibold text-[var(--audico-accent)] hover:underline"
+              onClick={() => setOpen(true)}
+            >
+              {t("addRisk", lang)}
+            </button>
+          ) : (
+            <form onSubmit={handleSubmit} className="mt-2 p-4 bg-audico-light-grey rounded border border-audico-mid-grey-3 space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-audico-dark-grey mb-1">
+                  {t("risk", lang)} *
+                </label>
+                <input
+                  className="w-full px-3 py-1.5 text-sm border border-audico-mid-grey-3 rounded bg-white focus:outline-none focus:ring-1 focus:ring-[var(--audico-accent)]"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-audico-dark-grey mb-1">
+                  {t("description", lang)}
+                </label>
+                <textarea
+                  className="w-full px-3 py-1.5 text-sm border border-audico-mid-grey-3 rounded bg-white focus:outline-none focus:ring-1 focus:ring-[var(--audico-accent)] resize-none"
+                  rows={2}
+                  value={riskDesc}
+                  onChange={(e) => setRiskDesc(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-audico-dark-grey mb-1">
+                    {t("impact", lang)}
+                  </label>
+                  <select
+                    className="w-full px-3 py-1.5 text-sm border border-audico-mid-grey-3 rounded bg-white focus:outline-none focus:ring-1 focus:ring-[var(--audico-accent)]"
+                    value={impact}
+                    onChange={(e) => setImpact(e.target.value)}
+                  >
+                    <option value="">—</option>
+                    {IMPACT_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-audico-dark-grey mb-1">
+                    {t("probability", lang)}
+                  </label>
+                  <select
+                    className="w-full px-3 py-1.5 text-sm border border-audico-mid-grey-3 rounded bg-white focus:outline-none focus:ring-1 focus:ring-[var(--audico-accent)]"
+                    value={probability}
+                    onChange={(e) => setProbability(e.target.value)}
+                  >
+                    <option value="">—</option>
+                    {PROBABILITY_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={submitting || !name.trim()}
+                  className="px-3 py-1.5 text-sm font-semibold rounded bg-[var(--audico-accent)] text-white
+                             hover:bg-[var(--audico-accent-hover)] transition-colors
+                             disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? t("adding", lang) : t("add", lang)}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="px-3 py-1.5 text-sm font-semibold rounded bg-white text-audico-black
+                             border border-audico-mid-grey-3 hover:bg-audico-light-grey transition-colors"
+                >
+                  {t("cancel", lang)}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       )}
     </section>
   );

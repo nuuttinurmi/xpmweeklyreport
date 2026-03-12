@@ -24,6 +24,8 @@ import {
   fetchRisks,
   fetchInitiativeWithType,
   updateStatusReport,
+  createChangeRequest,
+  createRisk,
 } from "../utils/dataverseClient";
 import { aggregateStaffing } from "../utils/staffingAggregator";
 import {
@@ -58,6 +60,10 @@ interface UseWeeklyReportResult {
   save: () => Promise<void>;
   saving: boolean;
   dirty: boolean;
+
+  // Create actions
+  addChangeRequest: (data: { pum_name: string; pum_description?: string }) => Promise<void>;
+  addRisk: (data: { pum_name: string; pum_riskdescription?: string; pum_riskimpact?: number; pum_probability?: number }) => Promise<void>;
 }
 
 export function useWeeklyReport(
@@ -214,6 +220,24 @@ export function useWeeklyReport(
     }
   }, [report]);
 
+  const addChangeRequest = useCallback(
+    async (data: { pum_name: string; pum_description?: string }) => {
+      await createChangeRequest(initiativeId, data);
+      const crs = await fetchChangeRequests(initiativeId);
+      setChanges(crs);
+    },
+    [initiativeId]
+  );
+
+  const addRisk = useCallback(
+    async (data: { pum_name: string; pum_riskdescription?: string; pum_riskimpact?: number; pum_probability?: number }) => {
+      await createRisk(initiativeId, data);
+      const rsks = await fetchRisks(initiativeId);
+      setRisks(rsks);
+    },
+    [initiativeId]
+  );
+
   return {
     loading,
     error,
@@ -229,5 +253,7 @@ export function useWeeklyReport(
     save,
     saving,
     dirty,
+    addChangeRequest,
+    addRisk,
   };
 }

@@ -39,6 +39,8 @@ export function ReportEditor({
     save,
     saving,
     dirty,
+    addChangeRequest,
+    addRisk,
   } = useWeeklyReport(reportId, initiativeId);
 
   const [lang, setLang] = useState<Lang>("en");
@@ -264,8 +266,22 @@ export function ReportEditor({
             lang={lang}
           />
 
-          {isLargeProject && <ChangesTable changes={changes} lang={lang} />}
-          {isLargeProject && <RisksTable risks={risks} lang={lang} />}
+          {isLargeProject && (
+            <ChangesTable
+              changes={changes}
+              lang={lang}
+              readOnly={isReadOnly}
+              onAdd={isReadOnly ? undefined : addChangeRequest}
+            />
+          )}
+          {isLargeProject && (
+            <RisksTable
+              risks={risks}
+              lang={lang}
+              readOnly={isReadOnly}
+              onAdd={isReadOnly ? undefined : addRisk}
+            />
+          )}
         </div>
       </div>
     </div>
